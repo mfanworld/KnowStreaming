@@ -10,7 +10,7 @@ import BrokerControllerChangeLog from './BrokerControllerChangeLog';
 import TopicBoard from './TopicDashboard';
 import TopicList from './TopicList';
 
-import Consumers from './Consumers/index';
+import Consumers from './ConsumerGroup';
 
 import Jobs from './Jobs';
 
@@ -21,6 +21,13 @@ import CommonConfig, { ClustersPermissionMap } from './CommonConfig';
 import SecurityACLs from './SecurityACLs';
 import SecurityUsers from './SecurityUsers';
 import LoadRebalance from './LoadRebalance';
+
+import Zookeeper from './Zookeeper';
+import ZookeeperDashboard from './ZookeeperDashboard';
+
+import ConnectDashboard from './ConnectDashboard';
+import Connectors from './Connect';
+import Workers from './Connect/Workers';
 
 const pageRoutes = [
   {
@@ -113,6 +120,36 @@ const pageRoutes = [
         path: 'operation/jobs',
         exact: true,
         component: Jobs,
+        noSider: false,
+      },
+      {
+        path: 'zookeeper',
+        exact: true,
+        component: ZookeeperDashboard,
+        noSider: false,
+      },
+      {
+        path: 'zookeeper/servers',
+        exact: true,
+        component: Zookeeper,
+        noSider: false,
+      },
+      {
+        path: 'connect',
+        exact: true,
+        component: ConnectDashboard,
+        noSider: false,
+      },
+      {
+        path: 'connect/connectors',
+        exact: true,
+        component: Connectors,
+        noSider: false,
+      },
+      {
+        path: 'connect/workers',
+        exact: true,
+        component: Workers,
         noSider: false,
       },
       {

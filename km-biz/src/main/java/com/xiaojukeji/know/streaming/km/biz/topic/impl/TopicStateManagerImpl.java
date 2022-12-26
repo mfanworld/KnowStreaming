@@ -2,17 +2,23 @@ package com.xiaojukeji.know.streaming.km.biz.topic.impl;
 
 import com.didiglobal.logi.log.ILog;
 import com.didiglobal.logi.log.LogFactory;
+import com.xiaojukeji.know.streaming.km.biz.group.GroupManager;
 import com.xiaojukeji.know.streaming.km.biz.topic.TopicStateManager;
+import com.xiaojukeji.know.streaming.km.common.bean.dto.pagination.PaginationBaseDTO;
 import com.xiaojukeji.know.streaming.km.common.bean.dto.topic.TopicRecordDTO;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.broker.Broker;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.cluster.ClusterPhy;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.metrics.PartitionMetrics;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.metrics.TopicMetrics;
+import com.xiaojukeji.know.streaming.km.common.bean.entity.offset.KSOffsetSpec;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.partition.Partition;
+import com.xiaojukeji.know.streaming.km.common.bean.entity.result.PaginationResult;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.result.Result;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.result.ResultStatus;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.topic.Topic;
+import com.xiaojukeji.know.streaming.km.common.bean.po.group.GroupMemberPO;
 import com.xiaojukeji.know.streaming.km.common.bean.vo.broker.BrokerReplicaSummaryVO;
+import com.xiaojukeji.know.streaming.km.common.bean.vo.group.GroupTopicOverviewVO;
 import com.xiaojukeji.know.streaming.km.common.bean.vo.topic.TopicBrokersPartitionsSummaryVO;
 import com.xiaojukeji.know.streaming.km.common.bean.vo.topic.TopicRecordVO;
 import com.xiaojukeji.know.streaming.km.common.bean.vo.topic.TopicStateVO;
@@ -32,15 +38,15 @@ import com.xiaojukeji.know.streaming.km.common.utils.PaginationUtil;
 import com.xiaojukeji.know.streaming.km.common.utils.ValidateUtils;
 import com.xiaojukeji.know.streaming.km.core.service.broker.BrokerService;
 import com.xiaojukeji.know.streaming.km.core.service.cluster.ClusterPhyService;
+import com.xiaojukeji.know.streaming.km.core.service.group.GroupService;
 import com.xiaojukeji.know.streaming.km.core.service.partition.PartitionMetricService;
 import com.xiaojukeji.know.streaming.km.core.service.partition.PartitionService;
 import com.xiaojukeji.know.streaming.km.core.service.topic.TopicConfigService;
 import com.xiaojukeji.know.streaming.km.core.service.topic.TopicMetricService;
 import com.xiaojukeji.know.streaming.km.core.service.topic.TopicService;
-import com.xiaojukeji.know.streaming.km.core.service.version.metrics.TopicMetricVersionItems;
+import com.xiaojukeji.know.streaming.km.core.service.version.metrics.kafka.TopicMetricVersionItems;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kafka.clients.admin.OffsetSpec;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.TopicConfig;
@@ -76,6 +82,12 @@ public class TopicStateManagerImpl implements TopicStateManager {
 
     @Autowired
     private TopicConfigService topicConfigService;
+
+    @Autowired
+    private GroupService groupService;
+
+    @Autowired
+    private GroupManager groupManager;
 
     @Override
     public TopicBrokerAllVO getTopicBrokerAll(Long clusterPhyId, String topicName, String searchBrokerHost) throws NotExistException {
@@ -131,12 +143,12 @@ public class TopicStateManagerImpl implements TopicStateManager {
         }
 
         // 获取分区beginOffset
-        Result<Map<TopicPartition, Long>> beginOffsetsMapResult = partitionService.getPartitionOffsetFromKafka(clusterPhyId, topicName, dto.getFilterPartitionId(), OffsetSpec.earliest(), null);
+        Result<Map<TopicPartition, Long>> beginOffsetsMapResult = partitionService.getPartitionOffsetFromKafka(clusterPhyId, topicName, dto.getFilterPartitionId(), KSOffsetSpec.earliest());
         if (beginOffsetsMapResult.failed()) {
             return Result.buildFromIgnoreData(beginOffsetsMapResult);
         }
         // 获取分区endOffset
-        Result<Map<TopicPartition, Long>> endOffsetsMapResult = partitionService.getPartitionOffsetFromKafka(clusterPhyId, topicName, dto.getFilterPartitionId(), OffsetSpec.latest(), null);
+        Result<Map<TopicPartition, Long>> endOffsetsMapResult = partitionService.getPartitionOffsetFromKafka(clusterPhyId, topicName, dto.getFilterPartitionId(), KSOffsetSpec.latest());
         if (endOffsetsMapResult.failed()) {
             return Result.buildFromIgnoreData(endOffsetsMapResult);
         }
@@ -295,7 +307,7 @@ public class TopicStateManagerImpl implements TopicStateManager {
         if (metricsResult.failed()) {
             // 仅打印错误日志，但是不直接返回错误
             log.error(
-                    "class=TopicStateManagerImpl||method=getTopicPartitions||clusterPhyId={}||topicName={}||result={}||msg=get metrics from es failed",
+                    "method=getTopicPartitions||clusterPhyId={}||topicName={}||result={}||msg=get metrics from es failed",
                     clusterPhyId, topicName, metricsResult
             );
         }
@@ -344,6 +356,19 @@ public class TopicStateManagerImpl implements TopicStateManager {
         }
 
         return Result.buildSuc(vo);
+    }
+
+    @Override
+    public PaginationResult<GroupTopicOverviewVO> pagingTopicGroupsOverview(Long clusterPhyId, String topicName, String searchGroupName, PaginationBaseDTO dto) {
+        PaginationResult<GroupMemberPO> paginationResult = groupService.pagingGroupMembers(clusterPhyId, topicName, "", "", searchGroupName, dto);
+
+        if (!paginationResult.hasData()) {
+            return PaginationResult.buildSuc(new ArrayList<>(), paginationResult);
+        }
+
+        List<GroupTopicOverviewVO> groupTopicVOList = groupManager.getGroupTopicOverviewVOList(clusterPhyId, paginationResult.getData().getBizData());
+
+        return PaginationResult.buildSuc(groupTopicVOList, paginationResult);
     }
 
     /**************************************************** private method ****************************************************/

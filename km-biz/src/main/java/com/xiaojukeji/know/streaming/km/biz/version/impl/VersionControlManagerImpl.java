@@ -17,6 +17,7 @@ import com.xiaojukeji.know.streaming.km.common.bean.vo.version.VersionItemVO;
 import com.xiaojukeji.know.streaming.km.common.enums.version.VersionEnum;
 import com.xiaojukeji.know.streaming.km.common.utils.ConvertUtil;
 import com.xiaojukeji.know.streaming.km.common.utils.VersionUtil;
+import com.xiaojukeji.know.streaming.km.core.service.cluster.ClusterPhyService;
 import com.xiaojukeji.know.streaming.km.core.service.version.VersionControlService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,10 +30,10 @@ import java.util.stream.Collectors;
 
 import static com.xiaojukeji.know.streaming.km.common.enums.version.VersionEnum.V_MAX;
 import static com.xiaojukeji.know.streaming.km.common.enums.version.VersionItemTypeEnum.*;
-import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.BrokerMetricVersionItems.*;
-import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.ClusterMetricVersionItems.*;
-import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.GroupMetricVersionItems.*;
-import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.TopicMetricVersionItems.*;
+import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.kafka.BrokerMetricVersionItems.*;
+import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.kafka.ClusterMetricVersionItems.*;
+import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.kafka.GroupMetricVersionItems.*;
+import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.kafka.TopicMetricVersionItems.*;
 
 @Service
 public class VersionControlManagerImpl implements VersionControlManager {
@@ -47,7 +48,7 @@ public class VersionControlManagerImpl implements VersionControlManager {
 
     @PostConstruct
     public void init(){
-        defaultMetrics.add(new UserMetricConfig(METRIC_TOPIC.getCode(), TOPIC_METRIC_HEALTH_SCORE, true));
+        defaultMetrics.add(new UserMetricConfig(METRIC_TOPIC.getCode(), TOPIC_METRIC_HEALTH_STATE, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_TOPIC.getCode(), TOPIC_METRIC_FAILED_FETCH_REQ, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_TOPIC.getCode(), TOPIC_METRIC_FAILED_PRODUCE_REQ, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_TOPIC.getCode(), TOPIC_METRIC_UNDER_REPLICA_PARTITIONS, true));
@@ -57,7 +58,7 @@ public class VersionControlManagerImpl implements VersionControlManager {
         defaultMetrics.add(new UserMetricConfig(METRIC_TOPIC.getCode(), TOPIC_METRIC_BYTES_REJECTED, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_TOPIC.getCode(), TOPIC_METRIC_MESSAGE_IN, true));
 
-        defaultMetrics.add(new UserMetricConfig(METRIC_CLUSTER.getCode(), CLUSTER_METRIC_HEALTH_SCORE, true));
+        defaultMetrics.add(new UserMetricConfig(METRIC_CLUSTER.getCode(), CLUSTER_METRIC_HEALTH_STATE, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_CLUSTER.getCode(), CLUSTER_METRIC_ACTIVE_CONTROLLER_COUNT, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_CLUSTER.getCode(), CLUSTER_METRIC_BYTES_IN, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_CLUSTER.getCode(), CLUSTER_METRIC_BYTES_OUT, true));
@@ -75,9 +76,9 @@ public class VersionControlManagerImpl implements VersionControlManager {
         defaultMetrics.add(new UserMetricConfig(METRIC_GROUP.getCode(), GROUP_METRIC_OFFSET_CONSUMED, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_GROUP.getCode(), GROUP_METRIC_LAG, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_GROUP.getCode(), GROUP_METRIC_STATE, true));
-        defaultMetrics.add(new UserMetricConfig(METRIC_GROUP.getCode(), GROUP_METRIC_HEALTH_SCORE, true));
+        defaultMetrics.add(new UserMetricConfig(METRIC_GROUP.getCode(), GROUP_METRIC_HEALTH_STATE, true));
 
-        defaultMetrics.add(new UserMetricConfig(METRIC_BROKER.getCode(), BROKER_METRIC_HEALTH_SCORE, true));
+        defaultMetrics.add(new UserMetricConfig(METRIC_BROKER.getCode(), BROKER_METRIC_HEALTH_STATE, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_BROKER.getCode(), BROKER_METRIC_CONNECTION_COUNT, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_BROKER.getCode(), BROKER_METRIC_MESSAGE_IN, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_BROKER.getCode(), BROKER_METRIC_NETWORK_RPO_AVG_IDLE, true));
@@ -91,6 +92,9 @@ public class VersionControlManagerImpl implements VersionControlManager {
         defaultMetrics.add(new UserMetricConfig(METRIC_BROKER.getCode(), BROKER_METRIC_BYTES_IN, true));
         defaultMetrics.add(new UserMetricConfig(METRIC_BROKER.getCode(), BROKER_METRIC_BYTES_OUT, true));
     }
+
+    @Autowired
+    private ClusterPhyService clusterPhyService;
 
     @Autowired
     private VersionControlService versionControlService;
@@ -107,28 +111,40 @@ public class VersionControlManagerImpl implements VersionControlManager {
         allVersionItemVO.addAll(ConvertUtil.list2List(versionControlService.listVersionControlItem(METRIC_BROKER.getCode()), VersionItemVO.class));
         allVersionItemVO.addAll(ConvertUtil.list2List(versionControlService.listVersionControlItem(METRIC_PARTITION.getCode()), VersionItemVO.class));
         allVersionItemVO.addAll(ConvertUtil.list2List(versionControlService.listVersionControlItem(METRIC_REPLICATION.getCode()), VersionItemVO.class));
+
         allVersionItemVO.addAll(ConvertUtil.list2List(versionControlService.listVersionControlItem(METRIC_ZOOKEEPER.getCode()), VersionItemVO.class));
+
+        allVersionItemVO.addAll(ConvertUtil.list2List(versionControlService.listVersionControlItem(METRIC_CONNECT_CLUSTER.getCode()), VersionItemVO.class));
+        allVersionItemVO.addAll(ConvertUtil.list2List(versionControlService.listVersionControlItem(METRIC_CONNECT_CONNECTOR.getCode()), VersionItemVO.class));
+        allVersionItemVO.addAll(ConvertUtil.list2List(versionControlService.listVersionControlItem(METRIC_CONNECT_MIRROR_MAKER.getCode()), VersionItemVO.class));
+
         allVersionItemVO.addAll(ConvertUtil.list2List(versionControlService.listVersionControlItem(WEB_OP.getCode()), VersionItemVO.class));
 
         Map<String, VersionItemVO> map = allVersionItemVO.stream().collect(
-                Collectors.toMap(u -> u.getType() + "@" + u.getName(), Function.identity() ));
+                Collectors.toMap(
+                        u -> u.getType() + "@" + u.getName(),
+                        Function.identity(),
+                        (v1, v2) -> v1)
+        );
 
         return Result.buildSuc(map);
     }
 
     @Override
-    public Result<Map<String, Long>> listAllVersions() {
+    public Result<Map<String, Long>> listAllKafkaVersions() {
         return Result.buildSuc(VersionEnum.allVersionsWithOutMax());
     }
 
     @Override
-    public Result<List<VersionItemVO>> listClusterVersionControlItem(Long clusterId, Integer type) {
+    public Result<List<VersionItemVO>> listKafkaClusterVersionControlItem(Long clusterId, Integer type) {
         List<VersionControlItem> allItem   = versionControlService.listVersionControlItem(type);
         List<VersionItemVO> versionItemVOS = new ArrayList<>();
 
+        String versionStr  = clusterPhyService.getVersionFromCacheFirst(clusterId);
+
         for (VersionControlItem item : allItem){
             VersionItemVO itemVO = ConvertUtil.obj2Obj(item, VersionItemVO.class);
-            boolean      support = versionControlService.isClusterSupport(clusterId, item);
+            boolean      support = versionControlService.isClusterSupport(versionStr, item);
 
             itemVO.setSupport(support);
             itemVO.setDesc(itemSupportDesc(item, support));
@@ -141,7 +157,7 @@ public class VersionControlManagerImpl implements VersionControlManager {
 
     @Override
     public Result<List<UserMetricConfigVO>> listUserMetricItem(Long clusterId, Integer type, String operator) {
-        Result<List<VersionItemVO>> ret = listClusterVersionControlItem(clusterId, type);
+        Result<List<VersionItemVO>> ret = listKafkaClusterVersionControlItem(clusterId, type);
         if(null == ret || ret.failed()){
             return Result.buildFail();
         }

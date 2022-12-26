@@ -54,7 +54,7 @@ public class ServerCmdDataParser implements FourLetterWordDataParser<ServerCmdDa
                     case "Latency min/avg/max":
                         String[] data = elem.getValue().split("/");
                         serverCmdData.setZkMinLatency(Long.valueOf(data[0]));
-                        serverCmdData.setZkAvgLatency(Long.valueOf(data[1]));
+                        serverCmdData.setZkAvgLatency(Float.valueOf(data[1]));
                         serverCmdData.setZkMaxLatency(Long.valueOf(data[2]));
                         break;
                     case "Received":
@@ -78,15 +78,18 @@ public class ServerCmdDataParser implements FourLetterWordDataParser<ServerCmdDa
                     case "Zxid":
                         serverCmdData.setZkZxid(Long.parseUnsignedLong(elem.getValue().trim().substring(2), 16));
                         break;
+                    case "Proposal sizes last/min/max":
+                        // zk的leader特有的数据，数据例子：Proposal sizes last/min/max||value=32/32/976165
+                        break;
                     default:
                         LOGGER.warn(
-                                "class=ServerCmdDataParser||method=parseAndInitData||name={}||value={}||msg=data not parsed!",
+                                "method=parseAndInitData||name={}||value={}||msg=data not parsed!",
                                 elem.getKey(), elem.getValue()
                         );
                 }
             } catch (Exception e) {
                 LOGGER.error(
-                        "class=ServerCmdDataParser||method=parseAndInitData||clusterPhyId={}||host={}||port={}||name={}||value={}||errMsg=exception!",
+                        "method=parseAndInitData||clusterPhyId={}||host={}||port={}||name={}||value={}||errMsg=exception!",
                         clusterPhyId, host, port, elem.getKey(), elem.getValue(), e
                 );
             }

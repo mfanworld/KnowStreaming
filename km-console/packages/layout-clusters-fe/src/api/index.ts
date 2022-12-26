@@ -14,6 +14,9 @@ export enum MetricType {
   Broker = 103,
   Partition = 104,
   Replication = 105,
+  Zookeeper = 110,
+  Connect = 120,
+  Connectors = 121,
   Controls = 901,
 }
 
@@ -23,6 +26,7 @@ const api = {
   logout: `${securityPrefix}/account/logout`,
 
   // 全局信息
+  getVersionInfo: () => getApi('/self/version'),
   getUserInfo: (userId: number) => `${securityPrefix}/user/${userId}`,
   getPermissionTree: `${securityPrefix}/permission/tree`,
   getKafkaVersionItems: () => getApi('/kafka-versions-items'),
@@ -59,8 +63,11 @@ const api = {
   phyClustersDashbord: getApi(`/physical-clusters/dashboard`),
   supportKafkaVersion: getApi(`/support-kafka-versions`),
   phyClusterState: getApi(`/physical-clusters/state`),
+  phyClusterHealthState: getApi(`/physical-clusters/health-state`),
 
   getOperatingStateList: (clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/groups-overview`),
+  getGroupTopicList: (clusterPhyId: number, groupName: string) => getApi(`/clusters/${clusterPhyId}/groups/${groupName}/topics-overview`),
+
   // 物理集群接口
   phyCluster: getApi(`/physical-clusters`),
   getPhyClusterBasic: (clusterPhyId: number) => getApi(`/physical-clusters/${clusterPhyId}/basic`),
@@ -127,6 +134,7 @@ const api = {
     getApi(`/clusters/${clusterPhyId}/topics/${topicName}/brokers-partitions-summary`),
   getTopicPartitionsDetail: (clusterPhyId: string, topicName: string) => getApi(`/clusters/${clusterPhyId}/topics/${topicName}/partitions`),
   getTopicMessagesList: (topicName: string, clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/topics/${topicName}/records`), // Messages列表
+  getTopicGroupList: (topicName: string, clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/topics/${topicName}/groups-overview`), // Consumers列表
   getTopicMessagesMetadata: (topicName: string, clusterPhyId: number) => getApi(`/clusters//${clusterPhyId}/topics/${topicName}/metadata`), // Messages列表
   getTopicACLsList: (topicName: string, clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/topics/${topicName}/acl-Bindings`), // ACLs列表
   getTopicConfigs: (topicName: string, clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/config-topics/${topicName}/configs`), // Configuration列表
@@ -157,7 +165,7 @@ const api = {
     getApi(`/clusters/${clusterPhyId}/${MetricType[type].toLowerCase()}s-metadata`), // 集群节点信息
   getDashboardMetricList: (clusterPhyId: string, type: MetricType) => getApi(`/clusters/${clusterPhyId}/types/${type}/user-metric-config`), // 默认选中的指标项
   getDashboardMetricChartData: (clusterPhyId: string, type: MetricType) =>
-    getApi(`/clusters/${clusterPhyId}/${MetricType[type].toLowerCase()}-metrics`), // 图表数据Z
+    getApi(`/clusters/${clusterPhyId}/${MetricType[type].toLowerCase()}-metrics`), // 图表数据
 
   // ! Jobs 集群任务相关接口
   getJobsList: (clusterPhyId: string) => getApi(`/clusters/${clusterPhyId}/jobs-overview`),
@@ -197,6 +205,52 @@ const api = {
   getJobsTaskData: (clusterPhyId: string, jobId: string | number) => getApi(`/clusters/${clusterPhyId}/jobs/${jobId}/modify-detail`),
   //编辑任务
   putJobsTaskData: (clusterPhyId: string) => getApi(`/clusters/${clusterPhyId}/jobs`),
+
+  // Zookeeper 接口
+  getZookeeperState: (clusterPhyId: string) => getApi(`/clusters/${clusterPhyId}/zookeepers-state`),
+  getZookeeperList: (clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/zookeepers-overview`),
+  getZookeeperNodeChildren: (clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/znode-children`),
+  getZookeeperNodeData: (clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/znode-data`),
+  getZookeeperMetricsInfo: (clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/zookeeper-latest-metrics`),
+  getZookeeperMetrics: (clusterPhyId: string) => getApi(`/clusters/${clusterPhyId}/zookeeper-metrics`),
+
+  // Connector 接口
+  getConnectState: (clusterPhyId: string) => getApi(`/kafka-clusters/${clusterPhyId}/connect-state`),
+  getConnectorsList: (clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/connectors-overview`),
+  // Connector 详情
+  getConnectDetailMetricPoints: (connectorName: number | string, connectClusterId: number | string) =>
+    getApi(`/kafka-connect/clusters/${connectClusterId}/connectors/${connectorName}/latest-metrics`),
+  getConnectDetailTasks: (connectorName: number | string, connectClusterId: number | string) =>
+    getApi(`/kafka-connect/clusters/${connectClusterId}/connectors/${connectorName}/tasks`),
+  getConnectDetailState: (connectorName: number | string, connectClusterId: number | string) =>
+    getApi(`/kafka-connect/clusters/${connectClusterId}/connectors/${connectorName}/state`),
+  optionTasks: () => getApi(`/kafka-connect/tasks`),
+  // Workers 接口
+  getWorkersList: (clusterPhyId: number) => getApi(`/clusters/${clusterPhyId}/workers-overview`),
+  // Connector
+  getConnectClusters: (clusterPhyId: string) => getApi(`/kafka-clusters/${clusterPhyId}/connect-clusters-basic`),
+  getConnectClusterMetrics: (clusterPhyId: string) => getApi(`/kafka-clusters/${clusterPhyId}/connect-cluster-metrics`),
+  getConnectors: (clusterPhyId: string) => getApi(`/clusters/${clusterPhyId}/connectors-basic`),
+  getConnectorMetrics: (clusterPhyId: string) => getApi(`/clusters/${clusterPhyId}/connectors-metrics`),
+  getConnectorPlugins: (connectClusterId: number) => getApi(`/kafka-connect/clusters/${connectClusterId}/connector-plugins`),
+  getConnectorPluginConfig: (connectClusterId: number, pluginName: string) =>
+    getApi(`/kafka-connect/clusters/${connectClusterId}/connector-plugins/${pluginName}/config`),
+  getCurPluginConfig: (connectClusterId: number, connectorName: string) =>
+    getApi(`/kafka-connect/clusters/${connectClusterId}/connectors/${connectorName}/config`),
+  isConnectorExist: (connectClusterId: number, connectorName: string) =>
+    getApi(`/kafka-connect/clusters/${connectClusterId}/connectors/${connectorName}/basic-combine-exist`),
+  validateConnectorConfig: getApi('/kafka-connect/connectors-config/validate'),
+  // Connector 操作接口 新增、暂停、重启、删除
+  connectorsOperates: getApi('/kafka-connect/connectors'),
+  // 修改 Connector 配置
+  updateConnectorConfig: getApi('/kafka-connect/connectors-config'),
+  // Cluster首页修改Connect集群
+  batchConnectClusters: getApi(`/kafka-connect/batch-connect-clusters`),
+  // Cluster首页删除Connect集群
+  deleteConnectClusters: getApi(`/kafka-connect/connect-clusters`),
+
+  getConnectClusterBasicExit: (clusterPhyId: string, clusterPhyName: string) =>
+    getApi(`/kafka-clusters/${clusterPhyId}/connect-clusters/${clusterPhyName}/basic-combine-exist`),
 };
 
 export default api;

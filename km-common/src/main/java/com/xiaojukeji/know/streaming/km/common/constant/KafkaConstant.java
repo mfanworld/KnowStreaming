@@ -33,7 +33,7 @@ public class KafkaConstant {
 
     public static final Integer DATA_VERSION_ONE = 1;
 
-    public static final Integer ADMIN_CLIENT_REQUEST_TIME_OUT_UNIT_MS = 5000;
+    public static final Integer ADMIN_CLIENT_REQUEST_TIME_OUT_UNIT_MS = 10000;
 
     public static final Integer KAFKA_SASL_SCRAM_ITERATIONS = 8192;
 
@@ -42,6 +42,8 @@ public class KafkaConstant {
     public static final Long POLL_ONCE_TIMEOUT_UNIT_MS = 2000L;
 
     public static final String CONTROLLER_ROLE = "controller";
+
+    public static final String DEFAULT_CONNECT_VERSION = "2.5.0";
 
     public static final Map<String, ConfigDef.ConfigKey> KAFKA_ALL_CONFIG_DEF_MAP = new ConcurrentHashMap<>();
 

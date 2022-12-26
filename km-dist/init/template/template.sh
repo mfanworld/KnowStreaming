@@ -13,7 +13,7 @@ curl -s --connect-timeout 10 -o /dev/null -X POST -H 'cache-control: no-cache' -
     ],
     "settings" : {
       "index" : {
-        "number_of_shards" : "10"
+        "number_of_shards" : "2"
       }
     },
     "mappings" : {
@@ -115,7 +115,7 @@ curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: appl
     ],
     "settings" : {
       "index" : {
-        "number_of_shards" : "10"
+        "number_of_shards" : "2"
       }
     },
     "mappings" : {
@@ -302,7 +302,7 @@ curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: appl
     ],
     "settings" : {
       "index" : {
-        "number_of_shards" : "10"
+        "number_of_shards" : "2"
       }
     },
     "mappings" : {
@@ -377,7 +377,7 @@ curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: appl
     ],
     "settings" : {
       "index" : {
-        "number_of_shards" : "10"
+        "number_of_shards" : "2"
       }
     },
     "mappings" : {
@@ -439,11 +439,11 @@ curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: appl
 curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: application/json' http://${esaddr}:${port}/_template/ks_kafka_replication_metric -d '{
     "order" : 10,
     "index_patterns" : [
-      "ks_kafka_partition_metric*"
+      "ks_kafka_replication_metric*"
     ],
     "settings" : {
       "index" : {
-        "number_of_shards" : "10"
+        "number_of_shards" : "2"
       }
     },
     "mappings" : {
@@ -500,30 +500,7 @@ curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: appl
       }
     },
     "aliases" : { }
-  }[root@10-255-0-23 template]# cat ks_kafka_replication_metric
-PUT _template/ks_kafka_replication_metric
-{
-    "order" : 10,
-    "index_patterns" : [
-      "ks_kafka_replication_metric*"
-    ],
-    "settings" : {
-      "index" : {
-        "number_of_shards" : "10"
-      }
-    },
-    "mappings" : {
-      "properties" : {
-        "timestamp" : {
-          "format" : "yyyy-MM-dd HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS Z||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd HH:mm:ss,SSS||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd HH:mm:ss,SSS Z||yyyy/MM/dd HH:mm:ss,SSS Z||epoch_millis",
-          "index" : true,
-          "type" : "date",
-          "doc_values" : true
-        }
-      }
-    },
-    "aliases" : { }
-  }' 
+  }'
 
 curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: application/json' http://${esaddr}:${port}/_template/ks_kafka_topic_metric -d '{
     "order" : 10,
@@ -532,7 +509,7 @@ curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: appl
     ],
     "settings" : {
       "index" : {
-        "number_of_shards" : "10"
+        "number_of_shards" : "2"
       }
     },
     "mappings" : {
@@ -640,7 +617,177 @@ curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: appl
       }
     },
     "aliases" : { }
-  }' 
+  }'
+
+curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: application/json' http://${SERVER_ES_ADDRESS}/_template/ks_kafka_zookeeper_metric -d '{
+    "order" : 10,
+    "index_patterns" : [
+      "ks_kafka_zookeeper_metric*"
+    ],
+    "settings" : {
+      "index" : {
+        "number_of_shards" : "2"
+      }
+    },
+    "mappings" : {
+      "properties" : {
+        "routingValue" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "ignore_above" : 256,
+              "type" : "keyword"
+            }
+          }
+        },
+        "clusterPhyId" : {
+          "type" : "long"
+        },
+        "metrics" : {
+          "properties" : {
+            "AvgRequestLatency" : {
+              "type" : "double"
+            },
+            "MinRequestLatency" : {
+              "type" : "double"
+            },
+            "MaxRequestLatency" : {
+              "type" : "double"
+            },
+            "OutstandingRequests" : {
+              "type" : "double"
+            },
+            "NodeCount" : {
+              "type" : "double"
+            },
+            "WatchCount" : {
+              "type" : "double"
+            },
+            "NumAliveConnections" : {
+              "type" : "double"
+            },
+            "PacketsReceived" : {
+              "type" : "double"
+            },
+            "PacketsSent" : {
+              "type" : "double"
+            },
+            "EphemeralsCount" : {
+              "type" : "double"
+            },
+            "ApproximateDataSize" : {
+              "type" : "double"
+            },
+            "OpenFileDescriptorCount" : {
+              "type" : "double"
+            },
+            "MaxFileDescriptorCount" : {
+              "type" : "double"
+            }
+          }
+        },
+        "key" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "ignore_above" : 256,
+              "type" : "keyword"
+            }
+          }
+        },
+        "timestamp" : {
+          "format" : "yyyy-MM-dd HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS Z||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd HH:mm:ss,SSS||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd HH:mm:ss,SSS Z||yyyy/MM/dd HH:mm:ss,SSS Z||epoch_millis",
+          "type" : "date"
+        }
+      }
+    },
+    "aliases" : { }
+  }'
+
+curl -s -o /dev/null -X POST -H 'cache-control: no-cache' -H 'content-type: application/json' http://${SERVER_ES_ADDRESS}/_template/ks_kafka_zookeeper_metric -d '{
+    "order" : 10,
+    "index_patterns" : [
+      "ks_kafka_zookeeper_metric*"
+    ],
+    "settings" : {
+      "index" : {
+        "number_of_shards" : "2"
+      }
+    },
+    "mappings" : {
+      "properties" : {
+        "routingValue" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "ignore_above" : 256,
+              "type" : "keyword"
+            }
+          }
+        },
+        "clusterPhyId" : {
+          "type" : "long"
+        },
+        "metrics" : {
+          "properties" : {
+            "AvgRequestLatency" : {
+              "type" : "double"
+            },
+            "MinRequestLatency" : {
+              "type" : "double"
+            },
+            "MaxRequestLatency" : {
+              "type" : "double"
+            },
+            "OutstandingRequests" : {
+              "type" : "double"
+            },
+            "NodeCount" : {
+              "type" : "double"
+            },
+            "WatchCount" : {
+              "type" : "double"
+            },
+            "NumAliveConnections" : {
+              "type" : "double"
+            },
+            "PacketsReceived" : {
+              "type" : "double"
+            },
+            "PacketsSent" : {
+              "type" : "double"
+            },
+            "EphemeralsCount" : {
+              "type" : "double"
+            },
+            "ApproximateDataSize" : {
+              "type" : "double"
+            },
+            "OpenFileDescriptorCount" : {
+              "type" : "double"
+            },
+            "MaxFileDescriptorCount" : {
+              "type" : "double"
+            }
+          }
+        },
+        "key" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "ignore_above" : 256,
+              "type" : "keyword"
+            }
+          }
+        },
+        "timestamp" : {
+          "format" : "yyyy-MM-dd HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS Z||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd HH:mm:ss,SSS||yyyy/MM/dd HH:mm:ss||yyyy-MM-dd HH:mm:ss,SSS Z||yyyy/MM/dd HH:mm:ss,SSS Z||epoch_millis",
+          "type" : "date"
+        }
+      }
+    },
+    "aliases" : { }
+  }'
 
 for i in {0..6};
 do
@@ -650,6 +797,7 @@ do
     curl -s -o /dev/null -X PUT http://${esaddr}:${port}/ks_kafka_group_metric${logdate} && \
     curl -s -o /dev/null -X PUT http://${esaddr}:${port}/ks_kafka_partition_metric${logdate} && \
     curl -s -o /dev/null -X PUT http://${esaddr}:${port}/ks_kafka_replication_metric${logdate} && \
+    curl -s -o /dev/null -X PUT http://${esaddr}:${port}/ks_kafka_zookeeper_metric${logdate} && \
     curl -s -o /dev/null -X PUT http://${esaddr}:${port}/ks_kafka_topic_metric${logdate} || \
     exit 2
 done

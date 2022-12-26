@@ -1,7 +1,5 @@
 package com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper;
 
-
-import com.xiaojukeji.know.streaming.km.common.utils.Tuple;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.apache.zookeeper.data.Stat;
@@ -16,4 +14,7 @@ public class Znode {
 
     @ApiModelProperty(value = "节点属性", example = "")
     private Stat stat;
+
+    @ApiModelProperty(value = "节点路径", example = "")
+    private String namespace;
 }

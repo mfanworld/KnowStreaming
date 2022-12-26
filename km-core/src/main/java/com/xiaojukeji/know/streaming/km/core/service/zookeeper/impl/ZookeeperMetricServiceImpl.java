@@ -10,6 +10,7 @@ import com.xiaojukeji.know.streaming.km.common.bean.entity.param.metric.Zookeepe
 import com.xiaojukeji.know.streaming.km.common.bean.entity.result.Result;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.result.ResultStatus;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.version.VersionJmxInfo;
+import com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletterword.BaseFourLetterWordCmdData;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletterword.ServerCmdData;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletterword.parser.MonitorCmdDataParser;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletterword.parser.ServerCmdDataParser;
@@ -26,8 +27,9 @@ import com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletterw
 import com.xiaojukeji.know.streaming.km.common.bean.entity.metrics.ZookeeperMetrics;
 import com.xiaojukeji.know.streaming.km.common.bean.po.metrice.ZookeeperMetricPO;
 import com.xiaojukeji.know.streaming.km.common.utils.zookeeper.FourLetterWordUtil;
+import com.xiaojukeji.know.streaming.km.core.cache.ZookeeperLocalCache;
 import com.xiaojukeji.know.streaming.km.core.service.cluster.ClusterPhyService;
-import com.xiaojukeji.know.streaming.km.core.service.kafkacontroller.KafkaControllerService;
+import com.xiaojukeji.know.streaming.km.core.service.health.state.HealthStateService;
 import com.xiaojukeji.know.streaming.km.core.service.version.BaseMetricService;
 import com.xiaojukeji.know.streaming.km.core.service.zookeeper.ZookeeperMetricService;
 import com.xiaojukeji.know.streaming.km.core.service.zookeeper.ZookeeperService;
@@ -42,7 +44,7 @@ import java.util.stream.Collectors;
 
 import static com.xiaojukeji.know.streaming.km.common.bean.entity.result.ResultStatus.*;
 import static com.xiaojukeji.know.streaming.km.common.bean.entity.result.ResultStatus.VC_JMX_CONNECT_ERROR;
-import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.ZookeeperMetricVersionItems.*;
+import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.kafka.ZookeeperMetricVersionItems.*;
 
 
 @Service
@@ -53,6 +55,7 @@ public class ZookeeperMetricServiceImpl extends BaseMetricService implements Zoo
     public static final String ZOOKEEPER_METHOD_GET_METRIC_FROM_MONITOR_CMD         = "getMetricFromMonitorCmd";
     public static final String ZOOKEEPER_METHOD_GET_METRIC_FROM_SERVER_CMD          = "getMetricFromServerCmd";
     public static final String ZOOKEEPER_METHOD_GET_METRIC_FROM_KAFKA_BY_JMX        = "getMetricFromKafkaByJMX";
+    public static final String ZOOKEEPER_METHOD_GET_METRIC_FROM_HEALTH_SERVICE      = "getMetricFromHealthService";
 
     @Autowired
     private ClusterPhyService clusterPhyService;
@@ -67,7 +70,7 @@ public class ZookeeperMetricServiceImpl extends BaseMetricService implements Zoo
     private KafkaJMXClient kafkaJMXClient;
 
     @Autowired
-    private KafkaControllerService kafkaControllerService;
+    private HealthStateService healthStateService;
 
     @Override
     protected VersionItemTypeEnum getVersionItemType() {
@@ -85,6 +88,7 @@ public class ZookeeperMetricServiceImpl extends BaseMetricService implements Zoo
         registerVCHandler( ZOOKEEPER_METHOD_GET_METRIC_FROM_MONITOR_CMD,          this::getMetricFromMonitorCmd);
         registerVCHandler( ZOOKEEPER_METHOD_GET_METRIC_FROM_SERVER_CMD,           this::getMetricFromServerCmd);
         registerVCHandler( ZOOKEEPER_METHOD_GET_METRIC_FROM_KAFKA_BY_JMX,         this::getMetricFromKafkaByJMX);
+        registerVCHandler( ZOOKEEPER_METHOD_GET_METRIC_FROM_HEALTH_SERVICE,       this::getMetricFromHealthService);
     }
 
     @Override
@@ -136,7 +140,7 @@ public class ZookeeperMetricServiceImpl extends BaseMetricService implements Zoo
                 metrics.putMetric(ret.getData().getMetrics());
             } catch (Exception e){
                 LOGGER.error(
-                        "class=ZookeeperMetricServiceImpl||method=collectMetricsFromZookeeper||clusterPhyId={}||metricName={}||errMsg=exception!",
+                        "method=collectMetricsFromZookeeper||clusterPhyId={}||metricName={}||errMsg=exception!",
                         clusterPhyId, metricName, e
                 );
             }
@@ -171,24 +175,37 @@ public class ZookeeperMetricServiceImpl extends BaseMetricService implements Zoo
 
         Result<ZookeeperMetrics> rz = null;
         for (Tuple<String, Integer> hostPort: param.getZkAddressList()) {
-            Result<ServerCmdData> cmdDataResult = FourLetterWordUtil.executeFourLetterCmd(
-                    param.getClusterPhyId(),
-                    hostPort.getV1(),
-                    hostPort.getV2(),
-                    param.getZkConfig() != null ? param.getZkConfig().getOpenSecure(): false,
-                    param.getZkConfig() != null ? param.getZkConfig().getRequestTimeoutUnitMs(): Constant.DEFAULT_REQUEST_TIMEOUT_UNIT_MS,
-                    new ServerCmdDataParser()
-            );
+            ServerCmdData cmdData = null;
 
-            if (cmdDataResult.failed()) {
-                rz = Result.buildFromIgnoreData(cmdDataResult);
+            BaseFourLetterWordCmdData baseCmdData = ZookeeperLocalCache.getData(hostPort.getV1(), hostPort.getV2(), FourLetterWordUtil.ServerCmd);
+            if (baseCmdData != null) {
+                cmdData = (ServerCmdData) baseCmdData;
+            } else if (ZookeeperLocalCache.canUse(hostPort.getV1(), hostPort.getV2(), FourLetterWordUtil.ServerCmd)) {
+                Result<ServerCmdData> cmdDataResult = FourLetterWordUtil.executeFourLetterCmd(
+                        param.getClusterPhyId(),
+                        hostPort.getV1(),
+                        hostPort.getV2(),
+                        param.getZkConfig() != null ? param.getZkConfig().getOpenSecure(): false,
+                        param.getZkConfig() != null ? param.getZkConfig().getRequestTimeoutUnitMs(): Constant.DEFAULT_REQUEST_TIMEOUT_UNIT_MS,
+                        new ServerCmdDataParser()
+                );
+
+                if (cmdDataResult.failed()) {
+                    ZookeeperLocalCache.setFailed(hostPort.getV1(), hostPort.getV2(), FourLetterWordUtil.ServerCmd);
+
+                    rz = Result.buildFromIgnoreData(cmdDataResult);
+                    continue;
+                }
+
+                cmdData = cmdDataResult.getData();
+                ZookeeperLocalCache.putData(hostPort.getV1(), hostPort.getV2(), FourLetterWordUtil.ServerCmd, cmdData);
+            } else {
+                // baseCmdData为空 且 当前地址不可使用
                 continue;
             }
 
-            ServerCmdData cmdData = cmdDataResult.getData();
-
             ZookeeperMetrics metrics = new ZookeeperMetrics(param.getClusterPhyId());
-            metrics.putMetric(ZOOKEEPER_METRIC_AVG_REQUEST_LATENCY,         cmdData.getZkAvgLatency().floatValue());
+            metrics.putMetric(ZOOKEEPER_METRIC_AVG_REQUEST_LATENCY,         cmdData.getZkAvgLatency());
             metrics.putMetric(ZOOKEEPER_METRIC_MIN_REQUEST_LATENCY,         cmdData.getZkMinLatency().floatValue());
             metrics.putMetric(ZOOKEEPER_METRIC_MAX_REQUEST_LATENCY,         cmdData.getZkMaxLatency().floatValue());
             metrics.putMetric(ZOOKEEPER_METRIC_OUTSTANDING_REQUESTS,        cmdData.getZkOutstandingRequests().floatValue());
@@ -208,24 +225,36 @@ public class ZookeeperMetricServiceImpl extends BaseMetricService implements Zoo
 
         Result<ZookeeperMetrics> rz = null;
         for (Tuple<String, Integer> hostPort: param.getZkAddressList()) {
-            Result<MonitorCmdData> cmdDataResult = FourLetterWordUtil.executeFourLetterCmd(
-                    param.getClusterPhyId(),
-                    hostPort.getV1(),
-                    hostPort.getV2(),
-                    param.getZkConfig() != null ? param.getZkConfig().getOpenSecure(): false,
-                    param.getZkConfig() != null ? param.getZkConfig().getRequestTimeoutUnitMs(): Constant.DEFAULT_REQUEST_TIMEOUT_UNIT_MS,
-                    new MonitorCmdDataParser()
-            );
+            MonitorCmdData cmdData = null;
 
-            if (cmdDataResult.failed()) {
-                rz = Result.buildFromIgnoreData(cmdDataResult);
+            BaseFourLetterWordCmdData baseCmdData = ZookeeperLocalCache.getData(hostPort.getV1(), hostPort.getV2(), FourLetterWordUtil.MonitorCmd);
+            if (baseCmdData != null) {
+                cmdData = (MonitorCmdData) baseCmdData;
+            } else if (ZookeeperLocalCache.canUse(hostPort.getV1(), hostPort.getV2(), FourLetterWordUtil.MonitorCmd)) {
+                Result<MonitorCmdData> cmdDataResult = FourLetterWordUtil.executeFourLetterCmd(
+                        param.getClusterPhyId(),
+                        hostPort.getV1(),
+                        hostPort.getV2(),
+                        param.getZkConfig() != null ? param.getZkConfig().getOpenSecure(): false,
+                        param.getZkConfig() != null ? param.getZkConfig().getRequestTimeoutUnitMs(): Constant.DEFAULT_REQUEST_TIMEOUT_UNIT_MS,
+                        new MonitorCmdDataParser()
+                );
+
+                if (cmdDataResult.failed()) {
+                    ZookeeperLocalCache.setFailed(hostPort.getV1(), hostPort.getV2(), FourLetterWordUtil.MonitorCmd);
+
+                    rz = Result.buildFromIgnoreData(cmdDataResult);
+                    continue;
+                }
+
+                cmdData = cmdDataResult.getData();
+                ZookeeperLocalCache.putData(hostPort.getV1(), hostPort.getV2(), FourLetterWordUtil.MonitorCmd, cmdData);
+            } else {
                 continue;
             }
 
-            MonitorCmdData cmdData = cmdDataResult.getData();
-
             ZookeeperMetrics metrics = new ZookeeperMetrics(param.getClusterPhyId());
-            metrics.putMetric(ZOOKEEPER_METRIC_AVG_REQUEST_LATENCY,         cmdData.getZkAvgLatency().floatValue());
+            metrics.putMetric(ZOOKEEPER_METRIC_AVG_REQUEST_LATENCY,         cmdData.getZkAvgLatency());
             metrics.putMetric(ZOOKEEPER_METRIC_MIN_REQUEST_LATENCY,         cmdData.getZkMinLatency().floatValue());
             metrics.putMetric(ZOOKEEPER_METRIC_MAX_REQUEST_LATENCY,         cmdData.getZkMaxLatency().floatValue());
             metrics.putMetric(ZOOKEEPER_METRIC_OUTSTANDING_REQUESTS,        cmdData.getZkOutstandingRequests().floatValue());
@@ -277,5 +306,14 @@ public class ZookeeperMetricServiceImpl extends BaseMetricService implements Zoo
         } catch (Exception e) {
             return Result.buildFailure(VC_JMX_CONNECT_ERROR);
         }
+    }
+
+    private Result<ZookeeperMetrics> getMetricFromHealthService(VersionItemParam metricParam) {
+        ZookeeperMetricParam param = (ZookeeperMetricParam)metricParam;
+
+        String      metricName              = param.getMetricName();
+        Long        clusterPhyId            = param.getClusterPhyId();
+
+        return Result.buildSuc(healthStateService.calZookeeperHealthMetrics(clusterPhyId));
     }
 }
