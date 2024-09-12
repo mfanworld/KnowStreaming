@@ -19,6 +19,7 @@ import com.xiaojukeji.know.streaming.km.common.enums.health.HealthCheckNameEnum;
 import com.xiaojukeji.know.streaming.km.common.enums.zookeeper.ZKRoleEnum;
 import com.xiaojukeji.know.streaming.km.common.utils.ConvertUtil;
 import com.xiaojukeji.know.streaming.km.common.utils.Tuple;
+import com.xiaojukeji.know.streaming.km.common.utils.ValidateUtils;
 import com.xiaojukeji.know.streaming.km.common.utils.zookeeper.ZookeeperUtils;
 import com.xiaojukeji.know.streaming.km.core.service.health.checker.AbstractHealthCheckService;
 import com.xiaojukeji.know.streaming.km.core.service.version.metrics.kafka.ZookeeperMetricVersionItems;
@@ -56,7 +57,7 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
     @Override
     public List<ClusterParam> getResList(Long clusterPhyId) {
         ClusterPhy clusterPhy = LoadedClusterPhyCache.getByPhyId(clusterPhyId);
-        if (clusterPhy == null) {
+        if (clusterPhy == null || ValidateUtils.isBlank(clusterPhy.getZookeeper())) {
             return new ArrayList<>();
         }
 
@@ -80,6 +81,15 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
         return HealthCheckDimensionEnum.ZOOKEEPER;
     }
 
+    @Override
+    public Integer getDimensionCodeIfSupport(Long kafkaClusterPhyId) {
+        if (ValidateUtils.isEmptyList(this.getResList(kafkaClusterPhyId))) {
+            return null;
+        }
+
+        return this.getHealthCheckDimensionEnum().getDimension();
+    }
+
     private HealthCheckResult checkBrainSplit(Tuple<ClusterParam, BaseClusterHealthConfig> singleConfigSimpleTuple) {
         ZookeeperParam param = (ZookeeperParam) singleConfigSimpleTuple.getV1();
 
@@ -92,6 +102,10 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
         );
 
         long value = infoList.stream().filter(elem -> ZKRoleEnum.LEADER.getRole().equals(elem.getRole())).count();
+        if (value == 0) {
+            // ZK 在单机模式下，leader角色就是standalone
+            value = infoList.stream().filter(elem -> ZKRoleEnum.STANDALONE.getRole().equals(elem.getRole())).count();
+        }
 
         checkResult.setPassed(value == 1 ? Constant.YES : Constant.NO);
         return checkResult;
@@ -112,7 +126,7 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
         );
         if (metricsResult.failed() || !metricsResult.hasData()) {
             log.error(
-                    "method=checkOutstandingRequests||clusterPhyId={}||param={}||config={}||result={}||errMsg=get metrics failed",clusterPhyId ,param, valueConfig, metricsResult
+                    "method=checkOutstandingRequests||clusterPhyId={}||param={}||config={}||result={}||errMsg=get metrics failed, may be collect failed or zk srvr command not in whitelist.",clusterPhyId ,param, valueConfig, metricsResult
             );
             return null;
         }
@@ -126,7 +140,7 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
 
         Float value = metricsResult.getData().getMetric(ZookeeperMetricVersionItems.ZOOKEEPER_METRIC_OUTSTANDING_REQUESTS);
         if(null == value){
-            log.error("method=checkOutstandingRequests||clusterPhyId={}|| errMsg=get OutstandingRequests metric failed, may be collect failed or zk mntr command not in whitelist.", clusterPhyId);
+            log.error("method=checkOutstandingRequests||clusterPhyId={}|| errMsg=get OutstandingRequests metric failed, may be collect failed or zk srvr command not in whitelist.", clusterPhyId);
             return null;
         }
         
@@ -159,7 +173,7 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
 
         if (metricsResult.failed() || !metricsResult.hasData()) {
             log.error(
-                    "method=checkWatchCount||param={}||config={}||result={}||errMsg=get metrics failed",
+                    "method=checkWatchCount||param={}||config={}||result={}||errMsg=get metrics failed, may be collect failed or zk mntr command not in whitelist.",
                     param, valueConfig, metricsResult
             );
             return null;
@@ -195,7 +209,7 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
 
         if (metricsResult.failed() || !metricsResult.hasData()) {
             log.error(
-                    "method=checkAliveConnections||param={}||config={}||result={}||errMsg=get metrics failed",
+                    "method=checkAliveConnections||param={}||config={}||result={}||errMsg=get metrics failed, may be collect failed or zk srvr command not in whitelist.",
                     param, valueConfig, metricsResult
             );
             return null;
@@ -231,7 +245,7 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
 
         if (metricsResult.failed() || !metricsResult.hasData()) {
             log.error(
-                    "method=checkApproximateDataSize||param={}||config={}||result={}||errMsg=get metrics failed",
+                    "method=checkApproximateDataSize||param={}||config={}||result={}||errMsg=get metrics failed, may be collect failed or zk srvr command not in whitelist.",
                     param, valueConfig, metricsResult
             );
             return null;
@@ -267,7 +281,7 @@ public class HealthCheckZookeeperService extends AbstractHealthCheckService {
 
         if (metricsResult.failed() || !metricsResult.hasData()) {
             log.error(
-                    "method=checkSentRate||param={}||config={}||result={}||errMsg=get metrics failed",
+                    "method=checkSentRate||param={}||config={}||result={}||errMsg=get metrics failed, may be collect failed or zk srvr command not in whitelist.",
                     param, valueConfig, metricsResult
             );
             return null;

@@ -4,15 +4,20 @@ import com.didiglobal.logi.log.ILog;
 import com.didiglobal.logi.log.LogFactory;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.config.healthcheck.BaseClusterHealthConfig;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.config.healthcheck.HealthCompareValueConfig;
+import com.xiaojukeji.know.streaming.km.common.bean.entity.connect.ConnectCluster;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.health.HealthCheckResult;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.metrics.connect.ConnectorMetrics;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.param.cluster.ClusterParam;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.param.connect.ConnectorParam;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.result.Result;
+import com.xiaojukeji.know.streaming.km.common.bean.po.connect.ConnectorPO;
 import com.xiaojukeji.know.streaming.km.common.constant.Constant;
+import com.xiaojukeji.know.streaming.km.common.enums.connect.ConnectorTypeEnum;
 import com.xiaojukeji.know.streaming.km.common.enums.health.HealthCheckDimensionEnum;
 import com.xiaojukeji.know.streaming.km.common.enums.health.HealthCheckNameEnum;
 import com.xiaojukeji.know.streaming.km.common.utils.Tuple;
+import com.xiaojukeji.know.streaming.km.common.utils.ValidateUtils;
+import com.xiaojukeji.know.streaming.km.core.service.connect.cluster.ConnectClusterService;
 import com.xiaojukeji.know.streaming.km.core.service.connect.connector.ConnectorMetricService;
 import com.xiaojukeji.know.streaming.km.core.service.connect.connector.ConnectorService;
 import com.xiaojukeji.know.streaming.km.core.service.health.checker.AbstractHealthCheckService;
@@ -32,10 +37,13 @@ import static com.xiaojukeji.know.streaming.km.core.service.version.metrics.conn
  */
 @Service
 public class HealthCheckConnectorService extends AbstractHealthCheckService {
-
     private static final ILog log = LogFactory.getLog(HealthCheckConnectorService.class);
+
     @Autowired
     private ConnectorService connectorService;
+
+    @Autowired
+    private ConnectClusterService connectClusterService;
 
     @Autowired
     private ConnectorMetricService connectorMetricService;
@@ -49,13 +57,10 @@ public class HealthCheckConnectorService extends AbstractHealthCheckService {
     @Override
     public List<ClusterParam> getResList(Long connectClusterId) {
         List<ClusterParam> paramList = new ArrayList<>();
-        Result<List<String>> ret = connectorService.listConnectorsFromCluster(connectClusterId);
-        if (!ret.hasData()) {
-            return paramList;
-        }
+        List<ConnectorPO> connectorPOList = connectorService.listByConnectClusterIdFromDB(connectClusterId);
 
-        for (String connectorName : ret.getData()) {
-            paramList.add(new ConnectorParam(connectClusterId, connectorName));
+        for (ConnectorPO connectorPO : connectorPOList) {
+            paramList.add(new ConnectorParam(connectClusterId, connectorPO.getConnectorName(), connectorPO.getConnectorType()));
         }
 
         return paramList;
@@ -66,15 +71,26 @@ public class HealthCheckConnectorService extends AbstractHealthCheckService {
         return HealthCheckDimensionEnum.CONNECTOR;
     }
 
+    @Override
+    public Integer getDimensionCodeIfSupport(Long kafkaClusterPhyId) {
+        List<ConnectCluster> clusterList = connectClusterService.listByKafkaCluster(kafkaClusterPhyId);
+        if (ValidateUtils.isEmptyList(clusterList)) {
+            return null;
+        }
+
+        return this.getHealthCheckDimensionEnum().getDimension();
+    }
+
     private HealthCheckResult checkFailedTaskCount(Tuple<ClusterParam, BaseClusterHealthConfig> paramTuple) {
         ConnectorParam param                    = (ConnectorParam) paramTuple.getV1();
         HealthCompareValueConfig compareConfig  = (HealthCompareValueConfig) paramTuple.getV2();
 
         Long connectClusterId   = param.getConnectClusterId();
         String connectorName    = param.getConnectorName();
+        String connectorType    = param.getConnectorType();
         Double compareValue     = compareConfig.getValue();
 
-        return this.getHealthCompareResult(connectClusterId, connectorName, CONNECTOR_METRIC_CONNECTOR_FAILED_TASK_COUNT, HealthCheckNameEnum.CONNECTOR_FAILED_TASK_COUNT, compareValue);
+        return this.getHealthCompareResult(connectClusterId, connectorName, connectorType, HealthCheckDimensionEnum.CONNECTOR.getDimension(), CONNECTOR_METRIC_CONNECTOR_FAILED_TASK_COUNT, HealthCheckNameEnum.CONNECTOR_FAILED_TASK_COUNT, compareValue);
     }
 
     private HealthCheckResult checkUnassignedTaskCount(Tuple<ClusterParam, BaseClusterHealthConfig> paramTuple) {
@@ -83,17 +99,18 @@ public class HealthCheckConnectorService extends AbstractHealthCheckService {
 
         Long connectClusterId   = param.getConnectClusterId();
         String connectorName    = param.getConnectorName();
+        String connectorType    = param.getConnectorType();
         Double compareValue     = compareConfig.getValue();
 
-        return this.getHealthCompareResult(connectClusterId, connectorName, CONNECTOR_METRIC_CONNECTOR_UNASSIGNED_TASK_COUNT, HealthCheckNameEnum.CONNECTOR_UNASSIGNED_TASK_COUNT, compareValue);
+        return this.getHealthCompareResult(connectClusterId, connectorName, connectorType, HealthCheckDimensionEnum.CONNECTOR.getDimension(), CONNECTOR_METRIC_CONNECTOR_UNASSIGNED_TASK_COUNT, HealthCheckNameEnum.CONNECTOR_UNASSIGNED_TASK_COUNT, compareValue);
 
     }
 
-    private HealthCheckResult getHealthCompareResult(Long connectClusterId, String connectorName, String metricName, HealthCheckNameEnum healthCheckNameEnum, Double compareValue) {
+    public HealthCheckResult getHealthCompareResult(Long connectClusterId, String connectorName, String connectorType, Integer dimension, String metricName, HealthCheckNameEnum healthCheckNameEnum, Double compareValue) {
 
-        Result<ConnectorMetrics> ret = connectorMetricService.collectConnectClusterMetricsFromKafka(connectClusterId, connectorName, metricName);
+        Result<ConnectorMetrics> ret = connectorMetricService.collectConnectClusterMetricsFromKafka(connectClusterId, connectorName, metricName , ConnectorTypeEnum.getByName(connectorType));
 
-        if (!ret.hasData()) {
+        if (!ret.hasData() || ret.getData().getMetric(metricName) == null) {
             log.error("method=getHealthCompareResult||connectClusterId={}||connectorName={}||metricName={}||errMsg=get metrics failed",
                     connectClusterId, connectorName, metricName);
             return null;
@@ -101,14 +118,8 @@ public class HealthCheckConnectorService extends AbstractHealthCheckService {
 
         Float value = ret.getData().getMetric(metricName);
 
-        if (value == null) {
-            log.error("method=getHealthCompareResult||connectClusterId={}||connectorName={}||metricName={}||errMsg=get metrics failed",
-                    connectClusterId, connectorName, metricName);
-            return null;
-        }
-
         HealthCheckResult checkResult = new HealthCheckResult(
-                HealthCheckDimensionEnum.CONNECTOR.getDimension(),
+                dimension,
                 healthCheckNameEnum.getConfigName(),
                 connectClusterId,
                 connectorName

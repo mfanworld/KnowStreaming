@@ -204,7 +204,7 @@ const ClusterTabContent = forwardRef((props: any, ref): JSX.Element => {
         return Promise.reject('集群名称长度限制在1～128字符');
       }
       if (!new RegExp(regClusterName).test(value)) {
-        return Promise.reject('集群名称支持中英文、数字、特殊字符 ! " # $ % & \' ( ) * + , - . / : ; < = > ? @ [  ] ^ _ ` { | } ~');
+        return Promise.reject("集群名称支持中英文、数字、特殊字符 ! # $ % & ' ( ) * + , - . / : ; < = > ? @ [  ] ^ _ ` { | } ~");
       }
       return Utils.request(api.getClusterBasicExit(value))
         .then((res: any) => {
@@ -522,27 +522,22 @@ const ConnectorForm = (props: {
     const params = {
       ...values,
       id: initFieldsValue?.id,
+      jmxProperties: values.jmxProperties ? `{ "jmxPort": "${values.jmxProperties}" }` : undefined,
     };
-    Utils.put(api.batchConnectClusters, [params])
-      .then((res) => {
-        // setSelectedTabKey(undefined);
-        getConnectClustersList();
-        notification.success({
-          message: '修改Connect集群成功',
-        });
-      })
-      .catch((error) => {
-        notification.success({
-          message: '修改Connect集群失败',
-        });
+    Utils.put(api.batchConnectClusters, [params]).then((res) => {
+      // setSelectedTabKey(undefined);
+      getConnectClustersList();
+      notification.success({
+        message: '修改Connect集群成功',
       });
+    });
   };
 
   const onCancel = () => {
     setSelectedTabKey(undefined);
     try {
       const jmxPortInfo = JSON.parse(initFieldsValue.jmxProperties) || {};
-      form.setFieldsValue({ ...initFieldsValue, jmxPort: jmxPortInfo.jmxPort });
+      form.setFieldsValue({ ...initFieldsValue, jmxProperties: jmxPortInfo.jmxPort });
     } catch {
       form.setFieldsValue({ ...initFieldsValue });
     }
@@ -551,7 +546,7 @@ const ConnectorForm = (props: {
   useLayoutEffect(() => {
     try {
       const jmxPortInfo = JSON.parse(initFieldsValue.jmxProperties) || {};
-      form.setFieldsValue({ ...initFieldsValue, jmxPort: jmxPortInfo.jmxPort });
+      form.setFieldsValue({ ...initFieldsValue, jmxProperties: jmxPortInfo.jmxPort });
     } catch {
       form.setFieldsValue({ ...initFieldsValue });
     }
@@ -626,7 +621,7 @@ const ConnectorForm = (props: {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name="jmxPort" label="JMX Port" style={{ width: 202 }}>
+          <Form.Item name="jmxProperties" label="JMX Port" style={{ width: 202 }}>
             <InputNumber min={0} max={99999} style={{ width: 202 }} />
           </Form.Item>
         </div>

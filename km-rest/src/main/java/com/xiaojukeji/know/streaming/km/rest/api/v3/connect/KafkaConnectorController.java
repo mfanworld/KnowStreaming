@@ -6,7 +6,6 @@ import com.xiaojukeji.know.streaming.km.biz.connect.connector.ConnectorManager;
 import com.xiaojukeji.know.streaming.km.common.bean.dto.connect.connector.ConnectorActionDTO;
 import com.xiaojukeji.know.streaming.km.common.bean.dto.connect.connector.ConnectorCreateDTO;
 import com.xiaojukeji.know.streaming.km.common.bean.dto.connect.connector.ConnectorDeleteDTO;
-import com.xiaojukeji.know.streaming.km.common.bean.dto.connect.connector.ConnectorConfigModifyDTO;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.connect.config.ConnectConfigInfos;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.result.Result;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.result.ResultStatus;
@@ -15,7 +14,8 @@ import com.xiaojukeji.know.streaming.km.common.constant.ApiPrefix;
 import com.xiaojukeji.know.streaming.km.common.constant.Constant;
 import com.xiaojukeji.know.streaming.km.common.enums.connect.ConnectActionEnum;
 import com.xiaojukeji.know.streaming.km.common.utils.ConvertUtil;
-import com.xiaojukeji.know.streaming.km.core.service.connect.connector.ConnectorService;
+import com.xiaojukeji.know.streaming.km.common.utils.ValidateUtils;
+import com.xiaojukeji.know.streaming.km.core.service.connect.connector.OpConnectorService;
 import com.xiaojukeji.know.streaming.km.core.service.connect.plugin.PluginService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -31,9 +31,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping(ApiPrefix.API_V3_CONNECT_PREFIX)
 public class KafkaConnectorController {
-
     @Autowired
-    private ConnectorService connectorService;
+    private OpConnectorService opConnectorService;
 
     @Autowired
     private ConnectorManager connectorManager;
@@ -45,6 +44,10 @@ public class KafkaConnectorController {
     @PostMapping(value = "connectors")
     @ResponseBody
     public Result<Void> createConnector(@Validated @RequestBody ConnectorCreateDTO dto) {
+        if (ValidateUtils.isNull(dto.getSuitableConfig())) {
+            return Result.buildFromRSAndMsg(ResultStatus.PARAM_ILLEGAL, "config字段不能为空");
+        }
+
         return connectorManager.createConnector(dto, HttpRequestUtil.getOperator());
     }
 
@@ -52,7 +55,7 @@ public class KafkaConnectorController {
     @DeleteMapping(value ="connectors")
     @ResponseBody
     public Result<Void> deleteConnectors(@Validated @RequestBody ConnectorDeleteDTO dto) {
-        return connectorService.deleteConnector(dto.getConnectClusterId(), dto.getConnectorName(), HttpRequestUtil.getOperator());
+        return opConnectorService.deleteConnector(dto.getConnectClusterId(), dto.getConnectorName(), HttpRequestUtil.getOperator());
     }
 
     @ApiOperation(value = "操作Connector", notes = "")
@@ -60,11 +63,11 @@ public class KafkaConnectorController {
     @ResponseBody
     public Result<Void> operateConnectors(@Validated @RequestBody ConnectorActionDTO dto) {
         if (ConnectActionEnum.RESTART.getValue().equals(dto.getAction())) {
-            return connectorService.restartConnector(dto.getConnectClusterId(), dto.getConnectorName(), HttpRequestUtil.getOperator());
+            return opConnectorService.restartConnector(dto.getConnectClusterId(), dto.getConnectorName(), HttpRequestUtil.getOperator());
         } else if (ConnectActionEnum.STOP.getValue().equals(dto.getAction())) {
-            return connectorService.stopConnector(dto.getConnectClusterId(), dto.getConnectorName(), HttpRequestUtil.getOperator());
+            return opConnectorService.stopConnector(dto.getConnectClusterId(), dto.getConnectorName(), HttpRequestUtil.getOperator());
         } else if (ConnectActionEnum.RESUME.getValue().equals(dto.getAction())) {
-            return connectorService.resumeConnector(dto.getConnectClusterId(), dto.getConnectorName(), HttpRequestUtil.getOperator());
+            return opConnectorService.resumeConnector(dto.getConnectClusterId(), dto.getConnectorName(), HttpRequestUtil.getOperator());
         }
 
         return Result.buildFailure(ResultStatus.PARAM_ILLEGAL);
@@ -73,15 +76,28 @@ public class KafkaConnectorController {
     @ApiOperation(value = "修改Connector配置", notes = "")
     @PutMapping(value ="connectors-config")
     @ResponseBody
-    public Result<Void> modifyConnectors(@Validated @RequestBody ConnectorConfigModifyDTO dto) {
-        return connectorManager.updateConnectorConfig(dto.getConnectClusterId(), dto.getConnectorName(), dto.getConfigs(), HttpRequestUtil.getOperator());
+    public Result<Void> modifyConnectors(@Validated @RequestBody ConnectorCreateDTO dto) {
+        if (ValidateUtils.isNull(dto.getSuitableConfig())) {
+            return Result.buildFromRSAndMsg(ResultStatus.PARAM_ILLEGAL, "config字段不能为空");
+        }
+
+        return connectorManager.updateConnectorConfig(
+                dto.getConnectClusterId(),
+                dto.getConnectorName(),
+                dto.getSuitableConfig(),
+                HttpRequestUtil.getOperator()
+        );
     }
 
     @ApiOperation(value = "校验Connector配置", notes = "")
     @PutMapping(value ="connectors-config/validate")
     @ResponseBody
-    public Result<ConnectConfigInfosVO> validateConnectors(@Validated @RequestBody ConnectorConfigModifyDTO dto) {
-        Result<ConnectConfigInfos> infoResult = pluginService.validateConfig(dto.getConnectClusterId(), dto.getConfigs());
+    public Result<ConnectConfigInfosVO> validateConnectors(@Validated @RequestBody ConnectorCreateDTO dto) {
+        if (ValidateUtils.isNull(dto.getSuitableConfig())) {
+            return Result.buildFromRSAndMsg(ResultStatus.PARAM_ILLEGAL, "config字段不能为空");
+        }
+
+        Result<ConnectConfigInfos> infoResult = pluginService.validateConfig(dto.getConnectClusterId(), dto.getSuitableConfig());
         if (infoResult.failed()) {
             return Result.buildFromIgnoreData(infoResult);
         }

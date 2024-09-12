@@ -40,6 +40,10 @@ export const dimensionMap = {
     label: 'Connector',
     href: '/connect/connectors',
   },
+  7: {
+    label: 'MirrorMaker',
+    href: '/replication',
+  },
 } as any;
 
 const toLowerCase = (name = '') => {
@@ -94,6 +98,18 @@ const CONFIG_ITEM_DETAIL_DESC = {
   },
   ConnectorUnassignedTaskCount: (valueGroup: any) => {
     return `未被分配的任务数量 小于 ${valueGroup?.value}`;
+  },
+  MirrorMakerFailedTaskCount: (valueGroup: any) => {
+    return `失败状态的任务数量 小于 ${valueGroup?.value}`;
+  },
+  MirrorMakerUnassignedTaskCount: (valueGroup: any) => {
+    return `未被分配的任务数量 小于 ${valueGroup?.value}`;
+  },
+  ReplicationLatencyMsMax: (valueGroup: any) => {
+    return `消息复制最大延迟时间 小于 ${valueGroup?.value}`;
+  },
+  'TotalRecord-errors': (valueGroup: any) => {
+    return `消息处理错误的次数 增量小于 ${valueGroup?.value}`;
   },
 };
 
@@ -199,7 +215,7 @@ export const getDetailColumn = (clusterId: number) => [
     width: 190,
     dataIndex: 'updateTime',
     render: (text: string) => {
-      return moment(text).format(timeFormat);
+      return text ? moment(text).format(timeFormat) : '-';
     },
   },
   {
@@ -208,21 +224,25 @@ export const getDetailColumn = (clusterId: number) => [
     width: 280,
     // eslint-disable-next-line react/display-name
     render: (passed: boolean, record: any) => {
-      if (passed) {
+      if (record?.updateTime) {
+        if (passed) {
+          return (
+            <>
+              <IconFont type="icon-zhengchang" />
+              <span style={{ marginLeft: 4 }}>通过</span>
+            </>
+          );
+        }
         return (
-          <>
-            <IconFont type="icon-zhengchang" />
-            <span style={{ marginLeft: 4 }}>通过</span>
-          </>
+          <div style={{ display: 'flex', alignItems: 'center', width: '240px' }}>
+            <IconFont type="icon-yichang" />
+            <div style={{ marginLeft: 4, marginRight: 6, flexShrink: 0 }}>未通过</div>
+            <TagsWithHide list={record.notPassedResNameList || []} expandTagContent="更多" />
+          </div>
         );
+      } else {
+        return '-';
       }
-      return (
-        <div style={{ display: 'flex', alignItems: 'center', width: '240px' }}>
-          <IconFont type="icon-yichang" />
-          <div style={{ marginLeft: 4, marginRight: 6, flexShrink: 0 }}>未通过</div>
-          <TagsWithHide list={record.notPassedResNameList || []} expandTagContent="更多" />
-        </div>
-      );
     },
   },
 ];
@@ -401,6 +421,42 @@ export const getHealthySettingColumn = (form: any, data: any, clusterId: string)
             );
           }
           case 'ConnectorUnassignedTaskCount': {
+            return (
+              <div className="table-form-item">
+                <span className="left-text">{'>'}</span>
+                {getFormItem({ configItem, attrs: { min: 0, max: 99998 } })}
+                <span className="right-text">则不通过</span>
+              </div>
+            );
+          }
+          case 'MirrorMakerFailedTaskCount': {
+            return (
+              <div className="table-form-item">
+                <span className="left-text">{'>'}</span>
+                {getFormItem({ configItem, attrs: { min: 0, max: 99998 } })}
+                <span className="right-text">则不通过</span>
+              </div>
+            );
+          }
+          case 'MirrorMakerUnassignedTaskCount': {
+            return (
+              <div className="table-form-item">
+                <span className="left-text">{'>'}</span>
+                {getFormItem({ configItem, attrs: { min: 0, max: 99998 } })}
+                <span className="right-text">则不通过</span>
+              </div>
+            );
+          }
+          case 'ReplicationLatencyMsMax': {
+            return (
+              <div className="table-form-item">
+                <span className="left-text">{'>'}</span>
+                {getFormItem({ configItem, attrs: { min: 0, max: 99998 } })}
+                <span className="right-text">则不通过</span>
+              </div>
+            );
+          }
+          case 'TotalRecord-errors': {
             return (
               <div className="table-form-item">
                 <span className="left-text">{'>'}</span>

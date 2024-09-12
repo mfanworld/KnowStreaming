@@ -33,7 +33,18 @@ public class FrontEndControlVersionItems extends BaseMetricVersionMetric {
 
     private static final String FE_CREATE_TOPIC_CLEANUP_POLICY                          = "FECreateTopicCleanupPolicy";
 
-    public FrontEndControlVersionItems(){}
+    private static final String FE_HA_CREATE_MIRROR_TOPIC                               = "FEHaCreateMirrorTopic";
+    private static final String FE_HA_DELETE_MIRROR_TOPIC                               = "FEHaDeleteMirrorTopic";
+
+    private static final String FE_TRUNCATE_TOPIC                                       = "FETruncateTopic";
+
+    private static final String FE_DELETE_GROUP_OFFSET                                  = "FEDeleteGroupOffset";
+    private static final String FE_DELETE_GROUP_TOPIC_OFFSET                            = "FEDeleteGroupTopicOffset";
+    private static final String FE_DELETE_GROUP_TOPIC_PARTITION_OFFSET                  = "FEDeleteGroupTopicPartitionOffset";
+
+    public FrontEndControlVersionItems() {
+        // ignore
+    }
 
     @Override
     public int versionItemType() {
@@ -80,6 +91,23 @@ public class FrontEndControlVersionItems extends BaseMetricVersionMetric {
         itemList.add(buildItem().minVersion(VersionEnum.V_0_10_1_0).maxVersion(VersionEnum.V_MAX)
                 .name(FE_CREATE_TOPIC_CLEANUP_POLICY).desc("Topic-创建Topic-Cleanup-Policy"));
 
+        // HA-Topic复制
+        itemList.add(buildItem().minVersion(VersionEnum.V_2_5_0_D_300).maxVersion(VersionEnum.V_2_5_0_D_MAX)
+                .name(FE_HA_CREATE_MIRROR_TOPIC).desc("HA-创建Topic复制"));
+        itemList.add(buildItem().minVersion(VersionEnum.V_2_5_0_D_300).maxVersion(VersionEnum.V_2_5_0_D_MAX)
+                .name(FE_HA_DELETE_MIRROR_TOPIC).desc("HA-取消Topic复制"));
+
+        // truncate topic
+        itemList.add(buildItem().minVersion(VersionEnum.V_0_11_0_0).maxVersion(VersionEnum.V_MAX)
+                .name(FE_TRUNCATE_TOPIC).desc("清空Topic"));
+
+        // 删除Offset
+        itemList.add(buildItem().minVersion(VersionEnum.V_2_0_0).maxVersion(VersionEnum.V_MAX)
+                .name(FE_DELETE_GROUP_OFFSET).desc("删除GroupOffset"));
+        itemList.add(buildItem().minVersion(VersionEnum.V_2_4_0).maxVersion(VersionEnum.V_MAX)
+                .name(FE_DELETE_GROUP_TOPIC_OFFSET).desc("删除GroupTopicOffset"));
+        itemList.add(buildItem().minVersion(VersionEnum.V_2_4_0).maxVersion(VersionEnum.V_MAX)
+                .name(FE_DELETE_GROUP_TOPIC_PARTITION_OFFSET).desc("删除GroupTopicPartitionOffset"));
         return itemList;
     }
 }

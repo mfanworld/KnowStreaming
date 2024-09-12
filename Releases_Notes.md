@@ -1,4 +1,129 @@
 
+## v3.4.0
+
+
+
+**问题修复**
+- [Bugfix]修复 Overview 指标文案错误的错误 ([#1190](https://github.com/didi/KnowStreaming/issues/1190))
+- [Bugfix]修复删除 Kafka 集群后，Connect 集群任务出现 NPE 问题 ([#1129](https://github.com/didi/KnowStreaming/issues/1129))
+- [Bugfix]修复在 Ldap 登录时，设置 auth-user-registration: false 会导致空指针的问题 ([#1117](https://github.com/didi/KnowStreaming/issues/1117))
+- [Bugfix]修复 Ldap 登录，调用 user.getId() 出现 NPE 的问题 ([#1108](https://github.com/didi/KnowStreaming/issues/1108))
+- [Bugfix]修复前端新增角色失败等问题 ([#1107](https://github.com/didi/KnowStreaming/issues/1107))
+- [Bugfix]修复 ZK 四字命令解析错误的问题
+- [Bugfix]修复 zk standalone 模式下，状态获取错误的问题
+- [Bugfix]修复 Broker 元信息解析方法未调用导致接入集群失败的问题 ([#993](https://github.com/didi/KnowStreaming/issues/993))
+- [Bugfix]修复 ConsumerAssignment 类型转换错误的问题
+- [Bugfix]修复对 Connect 集群的 clusterUrl 的动态更新导致配置不生效的问题 ([#1079](https://github.com/didi/KnowStreaming/issues/1079))
+- [Bugfix]修复消费组不支持重置到最旧 Offset 的问题 ([#1059](https://github.com/didi/KnowStreaming/issues/1059))
+- [Bugfix]后端增加查看 User 密码的权限点 ([#1095](https://github.com/didi/KnowStreaming/issues/1095))
+- [Bugfix]修复 Connect-JMX 端口维护信息错误的问题 ([#1146](https://github.com/didi/KnowStreaming/issues/1146))
+- [Bugfix]修复系统管理子应用无法正常启动的问题 ([#1167](https://github.com/didi/KnowStreaming/issues/1167))
+- [Bugfix]修复 Security 模块，权限点缺失问题 ([#1069](https://github.com/didi/KnowStreaming/issues/1069)), ([#1154](https://github.com/didi/KnowStreaming/issues/1154))
+- [Bugfix]修复 Connect-Worker Jmx 不生效的问题 ([#1067](https://github.com/didi/KnowStreaming/issues/1067))
+- [Bugfix]修复权限 ACL 管理中，消费组列表展示错误的问题 ([#1037](https://github.com/didi/KnowStreaming/issues/1037))
+- [Bugfix]修复 Connect 模块没有默认勾选指标的问题（[#1022](https://github.com/didi/KnowStreaming/issues/1022)）
+- [Bugfix]修复 es 索引 create/delete 死循环的问题 ([#1021](https://github.com/didi/KnowStreaming/issues/1021))
+- [Bugfix]修复 Connect-GroupDescription 解析失败的问题 ([#1015](https://github.com/didi/KnowStreaming/issues/1015))
+- [Bugfix]修复 Prometheus 开放接口中，Partition 指标 tag 缺失的问题 ([#1014](https://github.com/didi/KnowStreaming/issues/1014))
+- [Bugfix]修复 Topic 消息展示，offset 为 0 不显示的问题 ([#1192](https://github.com/didi/KnowStreaming/issues/1192))
+- [Bugfix]修复重置offset接口调用过多问题
+- [Bugfix]Connect 提交任务变更为只保存用户修改的配置，并修复 JSON 模式下配置展示不全的问题 ([#1158](https://github.com/didi/KnowStreaming/issues/1158))
+- [Bugfix]修复消费组 Offset 重置后，提示重置成功，但是前端不刷新数据，Offset 无变化的问题 ([#1090](https://github.com/didi/KnowStreaming/issues/1090))
+- [Bugfix]修复未勾选系统管理查看权限，但是依然可以查看系统管理的问题 ([#1105](https://github.com/didi/KnowStreaming/issues/1105))
+
+
+**产品优化**
+- [Optimize]补充接入集群时，可选的 Kafka 版本列表 ([#1204](https://github.com/didi/KnowStreaming/issues/1204))
+- [Optimize]GroupTopic 信息修改为实时获取 ([#1196](https://github.com/didi/KnowStreaming/issues/1196))
+- [Optimize]增加 AdminClient 观测信息 ([#1111](https://github.com/didi/KnowStreaming/issues/1111))
+- [Optimize]增加 Connector 运行状态指标 ([#1110](https://github.com/didi/KnowStreaming/issues/1110))
+- [Optimize]统一 DB 元信息更新格式 ([#1127](https://github.com/didi/KnowStreaming/issues/1127)), ([#1125](https://github.com/didi/KnowStreaming/issues/1125)), ([#1006](https://github.com/didi/KnowStreaming/issues/1006))
+- [Optimize]日志输出增加支持 MDC，方便用户在 logback.xml 中 json 格式化日志 ([#1032](https://github.com/didi/KnowStreaming/issues/1032))
+- [Optimize]Jmx 相关日志优化 ([#1082](https://github.com/didi/KnowStreaming/issues/1082))
+- [Optimize]Topic-Partitions增加主动超时功能 ([#1076](https://github.com/didi/KnowStreaming/issues/1076))
+- [Optimize]Topic-Messages页面后端增加按照Partition和Offset纬度的排序 ([#1075](https://github.com/didi/KnowStreaming/issues/1075))
+- [Optimize]Connect-JSON模式下的JSON格式和官方API的格式不一致 ([#1080](https://github.com/didi/KnowStreaming/issues/1080)), ([#1153](https://github.com/didi/KnowStreaming/issues/1153)), ([#1192](https://github.com/didi/KnowStreaming/issues/1192))
+- [Optimize]登录页面展示的 star 数量修改为最新的数量
+- [Optimize]Group 列表的 maxLag 指标调整为实时获取 ([#1074](https://github.com/didi/KnowStreaming/issues/1074))
+- [Optimize]Connector增加重启、编辑、删除等权限点 ([#1066](https://github.com/didi/KnowStreaming/issues/1066)), ([#1147](https://github.com/didi/KnowStreaming/issues/1147))
+- [Optimize]优化 pom.xml 中，KS版本的标签名
+- [Optimize]优化集群Brokers中, Controller显示存在延迟的问题 ([#1162](https://github.com/didi/KnowStreaming/issues/1162))
+- [Optimize]bump jackson version to 2.13.5
+- [Optimize]权限新增 ACL，自定义权限配置，资源 TransactionalId 优化 ([#1192](https://github.com/didi/KnowStreaming/issues/1192))
+- [Optimize]Connect 样式优化
+- [Optimize]消费组详情控制数据实时刷新
+
+
+**功能新增**
+- [Feature]新增删除 Group 或 GroupOffset 功能 ([#1064](https://github.com/didi/KnowStreaming/issues/1064)), ([#1084](https://github.com/didi/KnowStreaming/issues/1084)), ([#1040](https://github.com/didi/KnowStreaming/issues/1040)), ([#1144](https://github.com/didi/KnowStreaming/issues/1144))
+- [Feature]增加 Truncate 数据功能 ([#1062](https://github.com/didi/KnowStreaming/issues/1062)), ([#1043](https://github.com/didi/KnowStreaming/issues/1043)), ([#1145](https://github.com/didi/KnowStreaming/issues/1145))
+- [Feature]支持指定 Server 的具体 Jmx 端口 ([#965](https://github.com/didi/KnowStreaming/issues/965))
+
+
+**文档更新**
+- [Doc]FAQ 补充 ES 8.x 版本使用说明 ([#1189](https://github.com/didi/KnowStreaming/issues/1189))
+- [Doc]补充启动失败的说明 ([#1126](https://github.com/didi/KnowStreaming/issues/1126))
+- [Doc]补充 ZK 无数据排查说明 ([#1004](https://github.com/didi/KnowStreaming/issues/1004))
+- [Doc]无数据排查文档，补充 ES 集群 Shard 满的异常日志
+- [Doc]README 补充页面无数据排查手册链接
+- [Doc]补充连接特定 Jmx 端口的说明 ([#965](https://github.com/didi/KnowStreaming/issues/965))
+- [Doc]补充 zk_properties 字段的使用说明 ([#1003](https://github.com/didi/KnowStreaming/issues/1003))
+
+
+---
+
+
+## v3.3.0
+
+**问题修复**
+- 修复 Connect 的 JMX-Port 配置未生效问题;
+- 修复 不存在 Connector 时，OverView 页面的数据一直处于加载中的问题;
+- 修复 Group 分区信息，分页时展示不全的问题；
+- 修复采集副本指标时，参数传递错误的问题；
+- 修复用户信息修改后，用户列表会抛出空指针异常的问题；
+- 修复 Topic 详情页面，查看消息时，选择分区不生效问题；
+- 修复对 ZK 客户端进行配置后不生效的问题；
+- 修复 connect 模块，指标中缺少健康巡检项通过数的问题；
+- 修复 connect 模块，指标获取方法存在映射错误的问题；
+- 修复 connect 模块，max 纬度指标获取错误的问题；
+- 修复 Topic 指标大盘 TopN 指标显示信息错误的问题；
+- 修复 Broker Similar Config 显示错误的问题；
+- 修复解析 ZK 四字命令时，数据类型设置错误导致空指针的问题；
+- 修复新增 Topic 时，清理策略选项版本控制错误的问题；
+- 修复新接入集群时 Controller-Host 信息不显示的问题；
+- 修复 Connector 和 MM2 列表搜索不生效的问题；
+- 修复 Zookeeper 页面，Leader 显示存在异常的问题；
+- 修复前端打包失败的问题；
+
+
+**产品优化**
+- ZK Overview 页面补充默认展示的指标；
+- 统一初始化 ES 索引模版的脚本为 init_es_template.sh，同时新增缺失的 connect 索引模版初始化脚本，去除多余的 replica 和 zookeper 索引模版初始化脚本；
+- 指标大盘页面，优化指标筛选操作后，无指标数据的指标卡片由不显示改为显示，并增加无数据的兜底；
+- 删除从 ES 读写 replica 指标的相关代码；
+- 优化 Topic 健康巡检的日志，明确错误的原因；
+- 优化无 ZK 模块时，巡检详情忽略对 ZK 的展示；
+- 优化本地缓存大小为可配置；
+- Task 模块中的返回中，补充任务的分组信息；
+- FAQ 补充 Ldap 的配置说明；
+- FAQ 补充接入 Kerberos 认证的 Kafka 集群的配置说明；
+- ks_km_kafka_change_record 表增加时间纬度的索引，优化查询性能；
+- 优化 ZK 健康巡检的日志，便于问题的排查；
+
+**功能新增**
+- 新增基于滴滴 Kafka 的 Topic 复制功能（需使用滴滴 Kafka 才可具备该能力）；
+- Topic 指标大盘，新增 Topic 复制相关的指标；
+- 新增基于 TestContainers 的单测；
+
+
+**Kafka MM2 Beta版 (v3.3.0版本新增发布)**
+- MM2 任务的增删改查；
+- MM2 任务的指标大盘；
+- MM2 任务的健康状态；
+
+---
+
+
 ## v3.2.0
 
 **问题修复**

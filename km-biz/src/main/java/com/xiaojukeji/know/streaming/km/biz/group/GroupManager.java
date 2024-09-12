@@ -1,6 +1,7 @@
 package com.xiaojukeji.know.streaming.km.biz.group;
 
 import com.xiaojukeji.know.streaming.km.common.bean.dto.cluster.ClusterGroupSummaryDTO;
+import com.xiaojukeji.know.streaming.km.common.bean.dto.group.GroupOffsetDeleteDTO;
 import com.xiaojukeji.know.streaming.km.common.bean.dto.group.GroupOffsetResetDTO;
 import com.xiaojukeji.know.streaming.km.common.bean.dto.pagination.PaginationBaseDTO;
 import com.xiaojukeji.know.streaming.km.common.bean.dto.pagination.PaginationSortDTO;
@@ -25,7 +26,7 @@ public interface GroupManager {
                                                               String searchGroupKeyword,
                                                               PaginationBaseDTO dto);
 
-    PaginationResult<GroupTopicOverviewVO> pagingGroupTopicMembers(Long clusterPhyId, String groupName, PaginationBaseDTO dto);
+    PaginationResult<GroupTopicOverviewVO> pagingGroupTopicMembers(Long clusterPhyId, String groupName, PaginationBaseDTO dto) throws Exception;
 
     PaginationResult<GroupOverviewVO> pagingClusterGroupsOverview(Long clusterPhyId, ClusterGroupSummaryDTO dto);
 
@@ -39,5 +40,9 @@ public interface GroupManager {
 
     Result<Void> resetGroupOffsets(GroupOffsetResetDTO dto, String operator) throws Exception;
 
-    List<GroupTopicOverviewVO> getGroupTopicOverviewVOList  (Long clusterPhyId, List<GroupMemberPO> groupMemberPOList);
+    Result<Void> deleteGroupOffsets(GroupOffsetDeleteDTO dto, String operator) throws Exception;
+
+    @Deprecated
+    List<GroupTopicOverviewVO> getGroupTopicOverviewVOList(Long clusterPhyId, List<GroupMemberPO> groupMemberPOList);
+    List<GroupTopicOverviewVO> getGroupTopicOverviewVOList(Long clusterPhyId, List<GroupMemberPO> groupMemberPOList, Integer timeoutUnitMs);
 }

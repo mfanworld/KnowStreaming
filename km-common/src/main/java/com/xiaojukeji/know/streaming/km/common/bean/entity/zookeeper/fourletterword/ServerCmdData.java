@@ -18,13 +18,13 @@ import lombok.Data;
 public class ServerCmdData extends BaseFourLetterWordCmdData {
     private String zkVersion;
     private Float zkAvgLatency;
-    private Long zkMaxLatency;
-    private Long zkMinLatency;
-    private Long zkPacketsReceived;
-    private Long zkPacketsSent;
-    private Long zkNumAliveConnections;
-    private Long zkOutstandingRequests;
+    private Float zkMaxLatency;
+    private Float zkMinLatency;
+    private Float zkPacketsReceived;
+    private Float zkPacketsSent;
+    private Float zkNumAliveConnections;
+    private Float zkOutstandingRequests;
     private String zkServerState;
-    private Long zkZnodeCount;
+    private Float zkZnodeCount;
     private Long zkZxid;
 }

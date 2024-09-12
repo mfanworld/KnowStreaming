@@ -7,6 +7,9 @@ import { goLogin } from '@src/constants/axiosConfig';
 export enum ClustersPermissionMap {
   CLUSTERS_MANAGE = '多集群管理',
   CLUSTERS_MANAGE_VIEW = '多集群管理查看',
+  //仅用作隐藏掉系统管理菜单
+  SYS_MANAGE = '系统管理',
+  SYS_MANAGE_VIEW = '系统管理查看',
   // Cluster
   CLUSTER_ADD = '接入集群',
   CLUSTER_DEL = '删除集群',
@@ -26,11 +29,35 @@ export enum ClustersPermissionMap {
   TOPIC_ADD = 'Topic-新增Topic',
   TOPIC_MOVE_REPLICA = 'Topic-迁移副本',
   TOPIC_CHANGE_REPLICA = 'Topic-扩缩副本',
+  TOPIC_REPLICATOR = 'Topic-新增Topic复制',
+  TOPIC_CANCEL_REPLICATOR = 'Topic-详情-取消Topic复制',
   // Consumers
   CONSUMERS_RESET_OFFSET = 'Consumers-重置Offset',
+  GROUP_DELETE = 'Group-删除',
+  GROUP_TOPIC_DELETE = 'GroupOffset-Topic纬度删除',
+  GROUP_PARTITION_DELETE = 'GroupOffset-Partition纬度删除',
   // Test
   TEST_CONSUMER = 'Test-Consumer',
   TEST_PRODUCER = 'Test-Producer',
+  // MM2
+  MM2_ADD = 'MM2-新增',
+  MM2_CHANGE_CONFIG = 'MM2-编辑',
+  MM2_DELETE = 'MM2-删除',
+  MM2_RESTART = 'MM2-重启',
+  MM2_STOP_RESUME = 'MM2-暂停&恢复',
+  // Connector
+  CONNECTOR_ADD = 'Connector-新增',
+  CONNECTOR_CHANGE_CONFIG = 'Connector-编辑',
+  CONNECTOR_DELETE = 'Connector-删除',
+  CONNECTOR_RESTART = 'Connector-重启',
+  CONNECTOR_STOP_RESUME = 'Connector-暂停&恢复',
+  // Security
+  SECURITY_ACL_ADD = 'Security-ACL新增',
+  SECURITY_ACL_DELETE = 'Security-ACL删除',
+  SECURITY_USER_ADD = 'Security-User新增',
+  SECURITY_USER_DELETE = 'Security-User删除',
+  SECURITY_USER_EDIT_PASSWORD = 'Security-User修改密码',
+  SECURITY_USER_VIEW_PASSWORD = 'Security-User查看密码',
 }
 
 export interface PermissionNode {
@@ -79,6 +106,11 @@ const CommonConfig = () => {
       const userPermissions: ClustersPermissionMap[] = [];
       clustersPermissions &&
         clustersPermissions.childList.forEach((node: PermissionNode) => node.has && userPermissions.push(node.permissionName));
+
+      // 获取用户在系统管理拥有的权限
+      const configPermissions = userPermissionTree.find((sys: PermissionNode) => sys.permissionName === ClustersPermissionMap.SYS_MANAGE);
+      configPermissions &&
+        configPermissions.childList.forEach((node: PermissionNode) => node.has && userPermissions.push(node.permissionName));
 
       const hasPermission = (permissionName: ClustersPermissionMap) => permissionName && userPermissions.includes(permissionName);
 

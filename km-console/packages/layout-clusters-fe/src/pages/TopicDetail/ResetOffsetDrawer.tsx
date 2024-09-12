@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import EditTable from '../TestingProduce/component/EditTable';
 import Api from '@src/api/index';
 import moment from 'moment';
+import PubSub from "pubsub-js";
 
 const CustomSelectResetTime = (props: { value?: string; onChange?: (val: Number | String) => void }) => {
   const { value, onChange } = props;
@@ -19,18 +20,19 @@ const CustomSelectResetTime = (props: { value?: string; onChange?: (val: Number 
         }}
         onChange={(e) => {
           setTimeSetMode(e.target.value);
-          if (e.target.value === 'newest') {
-            onChange('newest');
+          if (e.target.value === 'newest' || e.target.value === 'oldest') {
+            onChange(e.target.value);
           }
         }}
         value={timeSetMode}
       >
         <Radio value={'newest'}>最新Offset</Radio>
+        <Radio value={'oldest'}>最旧Offset</Radio>
         <Radio value={'custom'}>自定义</Radio>
       </Radio.Group>
       {timeSetMode === 'custom' && (
         <DatePicker
-          value={moment(value === 'newest' ? Date.now() : value)}
+          value={moment(value === 'newest' || value === 'oldest' ? Date.now() : value)}
           style={{ width: '100%' }}
           showTime={true}
           onChange={(v) => {
@@ -88,7 +90,7 @@ export default (props: any) => {
       topicName: record.topicName,
     };
     if (formData.resetType === 'assignedTime') {
-      resetParams.resetType = formData.timestamp === 'newest' ? 0 : 2;
+      resetParams.resetType = formData.timestamp === 'newest' ? 0 : formData.timestamp === 'oldest' ? 1 : 2;
       if (resetParams.resetType === 2) {
         resetParams.timestamp = formData.timestamp;
       }
@@ -105,6 +107,13 @@ export default (props: any) => {
           message: '重置offset成功',
         });
         setResetOffsetVisible(false);
+        // 发布重置offset成功的消息
+        PubSub.publish('TopicDetail-ResetOffset',
+            {
+              groupName: record.groupName,
+              topicName: record.topicName
+            }
+        );
       } else {
         notification.error({
           message: '重置offset失败',

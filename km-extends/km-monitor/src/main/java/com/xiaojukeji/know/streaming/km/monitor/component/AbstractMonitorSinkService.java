@@ -3,7 +3,9 @@ package com.xiaojukeji.know.streaming.km.monitor.component;
 import com.didiglobal.logi.log.ILog;
 import com.didiglobal.logi.log.LogFactory;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.metrics.*;
+import com.xiaojukeji.know.streaming.km.common.bean.entity.metrics.connect.ConnectorMetrics;
 import com.xiaojukeji.know.streaming.km.common.bean.event.metric.*;
+import com.xiaojukeji.know.streaming.km.common.bean.event.metric.connect.ConnectorMetricEvent;
 import com.xiaojukeji.know.streaming.km.common.utils.FutureUtil;
 import com.xiaojukeji.know.streaming.km.monitor.common.MetricSinkPoint;
 import org.springframework.context.ApplicationListener;
@@ -16,11 +18,11 @@ import java.util.Map;
 import static com.xiaojukeji.know.streaming.km.monitor.common.MonitorSinkTagEnum.*;
 
 public abstract class AbstractMonitorSinkService implements ApplicationListener<BaseMetricEvent> {
-    protected static final ILog LOGGER = LogFactory.getLog(AbstractMonitorSinkService.class);
+    protected static final ILog LOGGER              = LogFactory.getLog(AbstractMonitorSinkService.class);
 
-    private static final int    STEP       = 60;
+    private static final int    STEP                = 60;
 
-    private FutureUtil<Void> sinkTP = FutureUtil.init(
+    private static final FutureUtil<Void> sinkTP    = FutureUtil.init(
             "SinkMetricsTP",
             5,
             5,
@@ -56,12 +58,13 @@ public abstract class AbstractMonitorSinkService implements ApplicationListener<
                 GroupMetricEvent groupMetricEvent = (GroupMetricEvent)event;
                 sinkMetrics(groupMetric2SinkPoint(groupMetricEvent.getGroupMetrics()));
 
-            } else if(event instanceof ReplicaMetricEvent) {
-                ReplicaMetricEvent       replicaMetricEvent = (ReplicaMetricEvent)event;
-                sinkMetrics(replicationMetric2SinkPoint(replicaMetricEvent.getReplicationMetrics()));
             } else if(event instanceof ZookeeperMetricEvent) {
                 ZookeeperMetricEvent     zookeeperMetricEvent = (ZookeeperMetricEvent)event;
                 sinkMetrics(zookeeperMetric2SinkPoint(zookeeperMetricEvent.getZookeeperMetrics()));
+
+            } else if (event instanceof ConnectorMetricEvent) {
+                ConnectorMetricEvent     connectorMetricEvent = (ConnectorMetricEvent)event;
+                sinkMetrics(connectConnectorMetric2SinkPoint(connectorMetricEvent.getConnectorMetricsList()));
             }
         } );
     }
@@ -126,6 +129,7 @@ public abstract class AbstractMonitorSinkService implements ApplicationListener<
             tagsMap.put(CLUSTER_ID.getName(),     p.getClusterPhyId());
             tagsMap.put(BROKER_ID.getName(),      p.getBrokerId());
             tagsMap.put(PARTITION_ID.getName(),   p.getPartitionId());
+            tagsMap.put(TOPIC.getName(),          p.getTopic());
 
             pointList.addAll(genSinkPoint("Partition", p.getMetrics(), p.getTimestamp(), tagsMap));
         }
@@ -159,21 +163,6 @@ public abstract class AbstractMonitorSinkService implements ApplicationListener<
         return pointList;
     }
 
-    private List<MetricSinkPoint> replicationMetric2SinkPoint(List<ReplicationMetrics> replicationMetrics){
-        List<MetricSinkPoint> pointList = new ArrayList<>();
-
-        for(ReplicationMetrics r : replicationMetrics){
-            Map<String, Object> tagsMap = new HashMap<>();
-            tagsMap.put(CLUSTER_ID.getName(),     r.getClusterPhyId());
-            tagsMap.put(BROKER_ID.getName(),      r.getBrokerId());
-            tagsMap.put(PARTITION_ID.getName(),   r.getPartitionId());
-
-            pointList.addAll(genSinkPoint("Replication", r.getMetrics(), r.getTimestamp(), tagsMap));
-        }
-
-        return pointList;
-    }
-
     private List<MetricSinkPoint> zookeeperMetric2SinkPoint(List<ZookeeperMetrics> zookeeperMetricsList){
         List<MetricSinkPoint> pointList = new ArrayList<>();
 
@@ -182,6 +171,21 @@ public abstract class AbstractMonitorSinkService implements ApplicationListener<
             tagsMap.put(CLUSTER_ID.getName(),     z.getClusterPhyId());
 
             pointList.addAll(genSinkPoint("Zookeeper", z.getMetrics(), z.getTimestamp(), tagsMap));
+        }
+
+        return pointList;
+    }
+
+    private List<MetricSinkPoint> connectConnectorMetric2SinkPoint(List<ConnectorMetrics> connectorMetricsList){
+        List<MetricSinkPoint> pointList = new ArrayList<>();
+
+        for(ConnectorMetrics metrics : connectorMetricsList){
+            Map<String, Object> tagsMap = new HashMap<>();
+            tagsMap.put(CLUSTER_ID.getName(),               metrics.getClusterPhyId());
+            tagsMap.put(CONNECT_CLUSTER_ID.getName(),       metrics.getConnectClusterId());
+            tagsMap.put(CONNECT_CONNECTOR.getName(),        metrics.getConnectorName());
+
+            pointList.addAll(genSinkPoint("ConnectConnector", metrics.getMetrics(), metrics.getTimestamp(), tagsMap));
         }
 
         return pointList;

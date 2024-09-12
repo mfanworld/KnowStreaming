@@ -3,6 +3,7 @@ package com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletter
 import com.didiglobal.logi.log.ILog;
 import com.didiglobal.logi.log.LogFactory;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletterword.ServerCmdData;
+import com.xiaojukeji.know.streaming.km.common.utils.ConvertUtil;
 import com.xiaojukeji.know.streaming.km.common.utils.zookeeper.FourLetterWordUtil;
 import lombok.Data;
 
@@ -45,7 +46,7 @@ public class ServerCmdDataParser implements FourLetterWordDataParser<ServerCmdDa
         }
 
         ServerCmdData serverCmdData = new ServerCmdData();
-        dataMap.entrySet().stream().forEach(elem -> {
+        dataMap.entrySet().forEach(elem -> {
             try {
                 switch (elem.getKey()) {
                     case "Zookeeper version":
@@ -53,27 +54,27 @@ public class ServerCmdDataParser implements FourLetterWordDataParser<ServerCmdDa
                         break;
                     case "Latency min/avg/max":
                         String[] data = elem.getValue().split("/");
-                        serverCmdData.setZkMinLatency(Long.valueOf(data[0]));
-                        serverCmdData.setZkAvgLatency(Float.valueOf(data[1]));
-                        serverCmdData.setZkMaxLatency(Long.valueOf(data[2]));
+                        serverCmdData.setZkMinLatency(ConvertUtil.string2Float(data[0]));
+                        serverCmdData.setZkAvgLatency(ConvertUtil.string2Float(data[1]));
+                        serverCmdData.setZkMaxLatency(ConvertUtil.string2Float(data[2]));
                         break;
                     case "Received":
-                        serverCmdData.setZkPacketsReceived(Long.valueOf(elem.getValue()));
+                        serverCmdData.setZkPacketsReceived(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "Sent":
-                        serverCmdData.setZkPacketsSent(Long.valueOf(elem.getValue()));
+                        serverCmdData.setZkPacketsSent(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "Connections":
-                        serverCmdData.setZkNumAliveConnections(Long.valueOf(elem.getValue()));
+                        serverCmdData.setZkNumAliveConnections(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "Outstanding":
-                        serverCmdData.setZkOutstandingRequests(Long.valueOf(elem.getValue()));
+                        serverCmdData.setZkOutstandingRequests(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "Mode":
                         serverCmdData.setZkServerState(elem.getValue());
                         break;
                     case "Node count":
-                        serverCmdData.setZkZnodeCount(Long.valueOf(elem.getValue()));
+                        serverCmdData.setZkZnodeCount(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "Zxid":
                         serverCmdData.setZkZxid(Long.parseUnsignedLong(elem.getValue().trim().substring(2), 16));

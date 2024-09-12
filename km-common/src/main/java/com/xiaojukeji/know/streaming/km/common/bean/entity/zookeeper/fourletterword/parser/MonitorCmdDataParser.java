@@ -3,6 +3,7 @@ package com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletter
 import com.didiglobal.logi.log.ILog;
 import com.didiglobal.logi.log.LogFactory;
 import com.xiaojukeji.know.streaming.km.common.bean.entity.zookeeper.fourletterword.MonitorCmdData;
+import com.xiaojukeji.know.streaming.km.common.utils.ConvertUtil;
 import com.xiaojukeji.know.streaming.km.common.utils.zookeeper.FourLetterWordUtil;
 import lombok.Data;
 
@@ -50,53 +51,53 @@ public class MonitorCmdDataParser implements FourLetterWordDataParser<MonitorCmd
         }
 
         MonitorCmdData monitorCmdData = new MonitorCmdData();
-        dataMap.entrySet().stream().forEach(elem -> {
+        dataMap.entrySet().forEach(elem -> {
             try {
                 switch (elem.getKey()) {
                     case "zk_version":
                         monitorCmdData.setZkVersion(elem.getValue().split("-")[0]);
                         break;
                     case "zk_avg_latency":
-                        monitorCmdData.setZkAvgLatency(Float.valueOf(elem.getValue()));
+                        monitorCmdData.setZkAvgLatency(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_max_latency":
-                        monitorCmdData.setZkMaxLatency(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkMaxLatency(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_min_latency":
-                        monitorCmdData.setZkMinLatency(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkMinLatency(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_packets_received":
-                        monitorCmdData.setZkPacketsReceived(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkPacketsReceived(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_packets_sent":
-                        monitorCmdData.setZkPacketsSent(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkPacketsSent(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_num_alive_connections":
-                        monitorCmdData.setZkNumAliveConnections(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkNumAliveConnections(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_outstanding_requests":
-                        monitorCmdData.setZkOutstandingRequests(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkOutstandingRequests(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_server_state":
                         monitorCmdData.setZkServerState(elem.getValue());
                         break;
                     case "zk_znode_count":
-                        monitorCmdData.setZkZnodeCount(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkZnodeCount(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_watch_count":
-                        monitorCmdData.setZkWatchCount(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkWatchCount(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_ephemerals_count":
-                        monitorCmdData.setZkEphemeralsCount(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkEphemeralsCount(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_approximate_data_size":
-                        monitorCmdData.setZkApproximateDataSize(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkApproximateDataSize(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_open_file_descriptor_count":
-                        monitorCmdData.setZkOpenFileDescriptorCount(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkOpenFileDescriptorCount(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "zk_max_file_descriptor_count":
-                        monitorCmdData.setZkMaxFileDescriptorCount(Long.valueOf(elem.getValue()));
+                        monitorCmdData.setZkMaxFileDescriptorCount(ConvertUtil.string2Float(elem.getValue()));
                         break;
                     case "Proposal sizes last/min/max":
                     case "zk_fsync_threshold_exceed_count":
